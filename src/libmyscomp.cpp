@@ -54,6 +54,8 @@ int mySimpleComputer::memoryLoad(char* filename)
 int mySimpleComputer::regInit()
 {
     regFlags = 0;
+    counter = 0;
+    accumulator = 0;
     return 0;
 }
 

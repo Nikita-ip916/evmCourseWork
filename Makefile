@@ -57,5 +57,5 @@ lib/libmyreadkey.a: src/libmyreadkey.cpp
 	ar rcs $@ build/libmyreadkey.o
 
 clean:
-		rm -rf bin/$(OUT)
+		rm -rf bin/*.exe
 		rm -rf build/*.o

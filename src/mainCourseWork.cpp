@@ -227,7 +227,7 @@ int main()
             break;
         case f6: // установление значения счётчика команд ---
             break;
-        case leftKey: // выбор ячейки влево
+        case leftKey: // выбор ячейки влево ??
             if (activeCell % 10 == 0) {
                 activeCell += 9;
             } else {
@@ -235,7 +235,7 @@ int main()
             }
             memUpdate(bc, sc, activeCell);
             break;
-        case rightKey: // выбор ячейки вправо
+        case rightKey: // выбор ячейки вправо ??
             if (activeCell % 10 == 9) {
                 activeCell -= 9;
             } else {
@@ -243,7 +243,7 @@ int main()
             }
             memUpdate(bc, sc, activeCell);
             break;
-        case upKey: // выбор ячейки вверх
+        case upKey: // выбор ячейки вверх ??
             if (activeCell <= 9) {
                 activeCell += 90;
             } else {
@@ -251,7 +251,7 @@ int main()
             }
             memUpdate(bc, sc, activeCell);
             break;
-        case downKey: // выбор ячейки вниз
+        case downKey: // выбор ячейки вниз ??
             if (activeCell >= 90) {
                 activeCell -= 90;
             } else {
