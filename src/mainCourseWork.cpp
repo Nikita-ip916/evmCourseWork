@@ -12,6 +12,9 @@
 
 using namespace std;
 
+int termW;
+int termH;
+
 #define error(er)                \
     if (er > 0) {                \
         bc.setfgcolor(standard); \
@@ -19,14 +22,15 @@ using namespace std;
         sc.regSet(er, 1);        \
     }
 
-void clearInput(bigChars& bc)
+void clearInput(bigChars& bc, string strInput)
 {
-    string str;
-    for (int i = 15; i <= 84; i++) {
-        str += " ";
+    int tmp = strInput.length() + 1;
+    for (int i = strInput.length() + 1; i <= termW; i++) {
+        strInput += " ";
     }
-    bc.gotoXY(24, 15);
-    bc.writeT(str);
+    bc.gotoXY(24, 1);
+    bc.writeT(strInput);
+    bc.gotoXY(24, tmp - 15);
 }
 
 void bordersUpdate(bigChars& bc)
@@ -95,7 +99,7 @@ void regUpdate(bigChars& bc, mySimpleComputer& sc)
     bc.writeT(regStr);
 }
 
-void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell)
+void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
 {
     int el, er;
     int command = 0, operand = 0;
@@ -117,6 +121,21 @@ void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell)
           << setw(2) << hex << operand;
         value += s.str();
         if (i == activeCell) {
+            int* bigPair = new int[2];
+            bigPair[0] = bigArr[32];
+            bigPair[1] = bigArr[33];
+            bc.printBigChar(bigPair, 14, 2);
+            for (int j = 1; j < 3; j++) {
+                bigPair[0] = bigArr[2 * (command >> (4 * (2 - j)) & 15)];
+                bigPair[1] = bigArr[2 * (command >> (4 * (2 - j)) & 15) + 1];
+                bc.printBigChar(bigPair, 14, 2 + j * 9);
+            }
+            for (int j = 3; j < 5; j++) {
+                bigPair[0] = bigArr[2 * (operand >> (4 * (4 - j)) & 15)];
+                bigPair[1] = bigArr[2 * (operand >> (4 * (4 - j)) & 15) + 1];
+                bc.printBigChar(bigPair, 14, 2 + j * 9);
+            }
+            bc.gotoXY(y, x);
             bc.setbgcolor(gray);
             bc.setfgcolor(black);
         }
@@ -133,9 +152,9 @@ int main()
     readKey rk;
     int er;
     int activeCell = 0;
-    int* bigPair = new int[2];
     int* bigArr = new int[36];
     char fileName[256] = "";
+    string fileNameInput = "Введите имя файла: ";
 
     sc.memoryInit();
     sc.regInit();
@@ -150,29 +169,22 @@ int main()
         cout << "Недостаточный размер терминала, минимум (24x84)\n";
         return -1;
     }
+    bc.getscreensize(&termH, &termW);
 
     bordersUpdate(bc);
-
-    int j = 0;
-    for (int i = 11; i < 16; i++) {
-        bigPair[0] = bigArr[2 * i];
-        bigPair[1] = bigArr[2 * i + 1];
-        bc.printBigChar(bigPair, 14, 2 + j * 9);
-        j++;
-    }
 
     ////////////////////////////////////////////// Динамические подписи
     regUpdate(bc, sc);
 
-    int el;
+    int el; // проверка заполнением
     for (int i = 0; i < 100; i++) {
         el = 0;
-        er = sc.commandEncode(10, i / 2 + 3, &el);
+        er = sc.commandEncode(10, i, &el);
         error(er);
         sc.memorySet(i, el);
     }
 
-    memUpdate(bc, sc, activeCell);
+    memUpdate(bc, sc, activeCell, bigArr);
 
     bc.gotoXY(24, 15);
     rk.mytermRegime(0, 0, 0, 0, 1);
@@ -185,30 +197,30 @@ int main()
         switch (key) {
         case zeroKey:
             break;
-        case l: // загрузка ram из файла ???
+        case l: // загрузка ram из файла
             rk.mytermRestore();
             do {
+                clearInput(bc, fileNameInput);
                 rk.readS(fileName);
                 strcat(fileName, ".dat");
                 bordersUpdate(bc);
-                memUpdate(bc, sc, activeCell);
+                memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
-                // clearInput(bc);
             } while (strlen(fileName) == 4);
             er = sc.memoryLoad(fileName);
             error(er);
-            memUpdate(bc, sc, activeCell);
+            memUpdate(bc, sc, activeCell, bigArr);
             rk.mytermSave();
             break;
         case s: // сохранение ram в файл
             rk.mytermRestore();
             do {
+                clearInput(bc, fileNameInput);
                 rk.readS(fileName);
                 strcat(fileName, ".dat");
                 bordersUpdate(bc);
-                memUpdate(bc, sc, activeCell);
+                memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
-                // clearInput(bc);
             } while (strlen(fileName) == 4);
             sc.memorySave(fileName);
             rk.mytermSave();
@@ -220,7 +232,7 @@ int main()
         case i: // сброс памяти и регистров до начальных
             sc.memoryInit();
             sc.regInit();
-            memUpdate(bc, sc, activeCell);
+            memUpdate(bc, sc, activeCell, bigArr);
             regUpdate(bc, sc);
             break;
         case f5: // установление значения аккумулятора ---
@@ -233,7 +245,7 @@ int main()
             } else {
                 activeCell--;
             }
-            memUpdate(bc, sc, activeCell);
+            memUpdate(bc, sc, activeCell, bigArr);
             break;
         case rightKey: // выбор ячейки вправо ??
             if (activeCell % 10 == 9) {
@@ -241,7 +253,7 @@ int main()
             } else {
                 activeCell++;
             }
-            memUpdate(bc, sc, activeCell);
+            memUpdate(bc, sc, activeCell, bigArr);
             break;
         case upKey: // выбор ячейки вверх ??
             if (activeCell <= 9) {
@@ -249,7 +261,7 @@ int main()
             } else {
                 activeCell -= 10;
             }
-            memUpdate(bc, sc, activeCell);
+            memUpdate(bc, sc, activeCell, bigArr);
             break;
         case downKey: // выбор ячейки вниз ??
             if (activeCell >= 90) {
@@ -257,7 +269,7 @@ int main()
             } else {
                 activeCell += 10;
             }
-            memUpdate(bc, sc, activeCell);
+            memUpdate(bc, sc, activeCell, bigArr);
             break;
         case q: // выход из программы
             break;
