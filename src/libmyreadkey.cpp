@@ -49,6 +49,9 @@ int readKey::readK(enum keys* key)
             else if (buf[2] == 'B' && buf[1] == '[')
                 *key = downKey;
             break;
+        case '\n':
+            *key = enter;
+            break;
         }
     }
     return 0;

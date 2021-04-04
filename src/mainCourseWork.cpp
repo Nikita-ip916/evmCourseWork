@@ -15,11 +15,9 @@ using namespace std;
 int termW;
 int termH;
 
-#define error(er)                \
-    if (er > 0) {                \
-        bc.setfgcolor(standard); \
-        bc.setbgcolor(standard); \
-        sc.regSet(er, 1);        \
+#define error(er)         \
+    if (er > 0) {         \
+        sc.regSet(er, 1); \
     }
 
 void clearInput(bigChars& bc, string strInput)
@@ -33,7 +31,7 @@ void clearInput(bigChars& bc, string strInput)
     bc.gotoXY(24, tmp - 15);
 }
 
-void bordersUpdate(bigChars& bc)
+void bordersUpdate(bigChars& bc, string inOut)
 {
     bc.clrscr();
     /////////////////////////////////////////////// Рамки
@@ -72,8 +70,7 @@ void bordersUpdate(bigChars& bc)
     bc.writeT("F5 - accumulator");
     bc.gotoXY(20, 48);
     bc.writeT("F6 - instructionCounter");
-    bc.gotoXY(24, 1);
-    bc.writeT("Input\\Output: ");
+    clearInput(bc, inOut);
 }
 
 void regUpdate(bigChars& bc, mySimpleComputer& sc)
@@ -99,6 +96,36 @@ void regUpdate(bigChars& bc, mySimpleComputer& sc)
     bc.writeT(regStr);
 }
 
+void bigCharUpdate(
+        bigChars& bc, int* bigArr, int command, int operand, int active = -1)
+{
+    int* bigPair = new int[2];
+    bigPair[0] = bigArr[32];
+    bigPair[1] = bigArr[33];
+    if (active == 0)
+        bc.printBigChar(bigPair, 14, 2, black, gray);
+    else
+        bc.printBigChar(bigPair, 14, 2);
+    for (int j = 1; j < 3; j++) {
+        bigPair[0] = bigArr[2 * (command >> (4 * (2 - j)) & 15)];
+        bigPair[1] = bigArr[2 * (command >> (4 * (2 - j)) & 15) + 1];
+        if (active == 1)
+            bc.printBigChar(bigPair, 14, 2 + j * 9, black, gray);
+        else
+            bc.printBigChar(bigPair, 14, 2 + j * 9);
+    }
+    for (int j = 3; j < 5; j++) {
+        bigPair[0] = bigArr[2 * (operand >> (4 * (4 - j)) & 15)];
+        bigPair[1] = bigArr[2 * (operand >> (4 * (4 - j)) & 15) + 1];
+        if (active == 2)
+            bc.printBigChar(bigPair, 14, 2 + j * 9, black, gray);
+        else
+            bc.printBigChar(bigPair, 14, 2 + j * 9);
+    }
+    if (active != -1)
+        clearInput(bc, "Измените значение ячейки памяти: ");
+}
+
 void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
 {
     int el, er;
@@ -121,20 +148,7 @@ void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
           << setw(2) << hex << operand;
         value += s.str();
         if (i == activeCell) {
-            int* bigPair = new int[2];
-            bigPair[0] = bigArr[32];
-            bigPair[1] = bigArr[33];
-            bc.printBigChar(bigPair, 14, 2);
-            for (int j = 1; j < 3; j++) {
-                bigPair[0] = bigArr[2 * (command >> (4 * (2 - j)) & 15)];
-                bigPair[1] = bigArr[2 * (command >> (4 * (2 - j)) & 15) + 1];
-                bc.printBigChar(bigPair, 14, 2 + j * 9);
-            }
-            for (int j = 3; j < 5; j++) {
-                bigPair[0] = bigArr[2 * (operand >> (4 * (4 - j)) & 15)];
-                bigPair[1] = bigArr[2 * (operand >> (4 * (4 - j)) & 15) + 1];
-                bc.printBigChar(bigPair, 14, 2 + j * 9);
-            }
+            bigCharUpdate(bc, bigArr, command, operand);
             bc.gotoXY(y, x);
             bc.setbgcolor(gray);
             bc.setfgcolor(black);
@@ -142,6 +156,74 @@ void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
         bc.writeT(value);
         bc.setbgcolor();
         bc.setfgcolor();
+    }
+}
+
+void changeValue(
+        bigChars& bc,
+        mySimpleComputer& sc,
+        readKey& rk,
+        int activeCell,
+        int* bigArr)
+{
+    if (activeCell == 100) {
+        // accumulator
+    } else if (activeCell == 101) {
+        // instructionCounter
+    } else if (activeCell >= 0 && activeCell <= 99) {
+        int el;
+        int command = 0, operand = 0;
+        sc.memoryGet(activeCell, &el);
+        sc.commandDecode(el, &command, &operand);
+        int activeBigChar = 0;
+        bigCharUpdate(bc, bigArr, command, operand, activeBigChar);
+        keys key;
+        do {
+            key = zeroKey;
+            rk.readK(&key);
+            if (key == leftKey) {
+                activeBigChar--;
+                if (activeBigChar < 0)
+                    activeBigChar = 2;
+            } else if (key == rightKey) {
+                activeBigChar++;
+                if (activeBigChar > 2)
+                    activeBigChar = 0;
+            } else if (key == upKey) {
+                if (activeBigChar == 0) {
+                    // ???????
+                } else if (activeBigChar == 1) {
+                    command++;
+                    if (command > 127)
+                        command = 0;
+                } else if (activeBigChar == 2) {
+                    operand++;
+                    if (operand > 127)
+                        operand = 0;
+                }
+            } else if (key == downKey) {
+                if (activeBigChar == 0) {
+                    // ????????
+                } else if (activeBigChar == 1) {
+                    command--;
+                    if (command < 0)
+                        command = 127;
+                } else if (activeBigChar == 2) {
+                    operand--;
+                    if (operand < 0)
+                        operand = 127;
+                }
+            }
+            if (key == enter) {
+                sc.commandEncode(command, operand, &el);
+                sc.memorySet(activeCell, el);
+            }
+            if (key != zeroKey) {
+                regUpdate(bc, sc);
+                bigCharUpdate(bc, bigArr, command, operand, activeBigChar);
+            }
+        } while (key != enter);
+        memUpdate(bc, sc, activeCell, bigArr);
     }
 }
 
@@ -154,6 +236,7 @@ int main()
     int activeCell = 0;
     int* bigArr = new int[36];
     char fileName[256] = "";
+    string stInput = "Введите команду: ";
     string fileNameInput = "Введите имя файла: ";
 
     sc.memoryInit();
@@ -171,7 +254,7 @@ int main()
     }
     bc.getscreensize(&termH, &termW);
 
-    bordersUpdate(bc);
+    bordersUpdate(bc, stInput);
 
     ////////////////////////////////////////////// Динамические подписи
     regUpdate(bc, sc);
@@ -186,7 +269,7 @@ int main()
 
     memUpdate(bc, sc, activeCell, bigArr);
 
-    bc.gotoXY(24, 15);
+    clearInput(bc, stInput);
     rk.mytermRegime(0, 0, 0, 0, 1);
     rk.mytermSave();
 
@@ -203,7 +286,7 @@ int main()
                 clearInput(bc, fileNameInput);
                 rk.readS(fileName);
                 strcat(fileName, ".dat");
-                bordersUpdate(bc);
+                bordersUpdate(bc, stInput);
                 memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
             } while (strlen(fileName) == 4);
@@ -218,7 +301,7 @@ int main()
                 clearInput(bc, fileNameInput);
                 rk.readS(fileName);
                 strcat(fileName, ".dat");
-                bordersUpdate(bc);
+                bordersUpdate(bc, stInput);
                 memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
             } while (strlen(fileName) == 4);
@@ -271,12 +354,15 @@ int main()
             }
             memUpdate(bc, sc, activeCell, bigArr);
             break;
+        case enter:
+            changeValue(bc, sc, rk, activeCell, bigArr);
+            break;
         case q: // выход из программы
             break;
         }
         if (key != zeroKey) {
             regUpdate(bc, sc);
-            bc.gotoXY(24, 15);
+            clearInput(bc, stInput);
         }
     } while (key != q);
     bc.clrscr();

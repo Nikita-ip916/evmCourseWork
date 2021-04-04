@@ -18,6 +18,7 @@ enum keys {
     rightKey,
     upKey,
     downKey,
+    enter,
     q
 };
 
