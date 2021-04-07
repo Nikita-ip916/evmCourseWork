@@ -16,7 +16,7 @@ using namespace std;
 #define rightCommand(command)                                                \
     ((command >= 10 && command <= 11) || (command >= 20 && command <= 21)    \
      || (command >= 30 && command <= 33) || (command >= 40 && command <= 43) \
-     || (command >= 51 && command <= 76))
+     || (command == 76))
 
 #define wr1(regFlags, reg) regFlags |= (1 << reg)
 #define wr0(regFlags, reg) regFlags &= ~(1 << reg)

@@ -15,6 +15,12 @@ using namespace std;
 int termW;
 int termH;
 
+#define POS_ZERO 0x6000
+#define NEG_ZERO 0x4000
+
+#define POS_MAX 0x7FFF
+#define NEG_MAX 0x5FFF
+
 #define error(er)         \
     if (er > 0) {         \
         sc.regSet(er, 1); \
@@ -97,20 +103,20 @@ void regUpdate(bigChars& bc, mySimpleComputer& sc)
 }
 
 void bigCharUpdate(
-        bigChars& bc, int* bigArr, int command, int operand, int active = -1)
+        int command, int operand, bigChars& bc, int* bigArr, int active = -1)
 {
     int* bigPair = new int[2];
     bigPair[0] = bigArr[32];
     bigPair[1] = bigArr[33];
     if (active == 0)
-        bc.printBigChar(bigPair, 14, 2, black, gray);
+        bc.printBigChar(bigPair, 14, 2, cl_black, cl_gray);
     else
         bc.printBigChar(bigPair, 14, 2);
     for (int j = 1; j < 3; j++) {
         bigPair[0] = bigArr[2 * (command >> (4 * (2 - j)) & 15)];
         bigPair[1] = bigArr[2 * (command >> (4 * (2 - j)) & 15) + 1];
         if (active == 1)
-            bc.printBigChar(bigPair, 14, 2 + j * 9, black, gray);
+            bc.printBigChar(bigPair, 14, 2 + j * 9, cl_black, cl_gray);
         else
             bc.printBigChar(bigPair, 14, 2 + j * 9);
     }
@@ -118,7 +124,33 @@ void bigCharUpdate(
         bigPair[0] = bigArr[2 * (operand >> (4 * (4 - j)) & 15)];
         bigPair[1] = bigArr[2 * (operand >> (4 * (4 - j)) & 15) + 1];
         if (active == 2)
-            bc.printBigChar(bigPair, 14, 2 + j * 9, black, gray);
+            bc.printBigChar(bigPair, 14, 2 + j * 9, cl_black, cl_gray);
+        else
+            bc.printBigChar(bigPair, 14, 2 + j * 9);
+    }
+    if (active != -1)
+        clearInput(bc, "Измените значение ячейки памяти: ");
+}
+
+void bigCharUpdate(int data, bigChars& bc, int* bigArr, int active = -1)
+{
+    int* bigPair = new int[2];
+    if (getFlag(data, 13)) {
+        bigPair[0] = bigArr[34];
+        bigPair[1] = bigArr[35];
+    } else {
+        bigPair[0] = 0;
+        bigPair[1] = 0;
+    }
+    if (active == 0)
+        bc.printBigChar(bigPair, 14, 2, cl_black, cl_gray);
+    else
+        bc.printBigChar(bigPair, 14, 2);
+    for (int j = 1; j < 5; j++) {
+        bigPair[0] = bigArr[2 * ((data & 0x1FFF) >> (4 * (4 - j)) & 15)];
+        bigPair[1] = bigArr[2 * ((data & 0x1FFF) >> (4 * (4 - j)) & 15) + 1];
+        if ((active == 1 && j < 3) || (active == 2 && j >= 3))
+            bc.printBigChar(bigPair, 14, 2 + j * 9, cl_black, cl_gray);
         else
             bc.printBigChar(bigPair, 14, 2 + j * 9);
     }
@@ -128,30 +160,39 @@ void bigCharUpdate(
 
 void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
 {
-    int el, er;
+    int el, isData;
     int command = 0, operand = 0;
     for (int i = 0; i < n; i++) {
         int y = i / 10 + 2;
         int x = (i % 10) * 6 + 2;
-        er = sc.memoryGet(i, &el);
-        error(er);
+        sc.memoryGet(i, &el);
 
-        er = sc.commandDecode(el, &command, &operand);
-        error(er);
+        isData = sc.commandDecode(el, &command, &operand);
 
         bc.gotoXY(y, x);
 
         string value;
-        value = "+";
         ostringstream s;
-        s << setfill('0') << setw(2) << hex << command << setfill('0')
-          << setw(2) << hex << operand;
+        if (!isData) {
+            value = "+";
+            s << setfill('0') << setw(2) << hex << command << setfill('0')
+              << setw(2) << hex << operand;
+        } else {
+            if (getFlag(el, 13))
+                value = "-";
+            else
+                value = " ";
+            s << setfill('0') << setw(4) << hex << (el & 0x1FFF);
+        }
         value += s.str();
         if (i == activeCell) {
-            bigCharUpdate(bc, bigArr, command, operand);
+            if (!isData)
+                bigCharUpdate(command, operand, bc, bigArr);
+            else
+                bigCharUpdate(el, bc, bigArr);
             bc.gotoXY(y, x);
-            bc.setbgcolor(gray);
-            bc.setfgcolor(black);
+            bc.setbgcolor(cl_gray);
+            bc.setfgcolor(cl_black);
         }
         bc.writeT(value);
         bc.setbgcolor();
@@ -171,12 +212,15 @@ void changeValue(
     } else if (activeCell == 101) {
         // instructionCounter
     } else if (activeCell >= 0 && activeCell <= 99) {
-        int el;
+        int el, isData;
         int command = 0, operand = 0;
         sc.memoryGet(activeCell, &el);
-        sc.commandDecode(el, &command, &operand);
+        isData = sc.commandDecode(el, &command, &operand);
         int activeBigChar = 0;
-        bigCharUpdate(bc, bigArr, command, operand, activeBigChar);
+        if (!isData)
+            bigCharUpdate(command, operand, bc, bigArr, activeBigChar);
+        else
+            bigCharUpdate(el, bc, bigArr, activeBigChar);
         keys key;
         do {
             key = zeroKey;
@@ -191,36 +235,104 @@ void changeValue(
                     activeBigChar = 0;
             } else if (key == upKey) {
                 if (activeBigChar == 0) {
-                    // ???????
+                    if (getFlag(el, 14)) {
+                        if (!getFlag(el, 13)) {
+                            isData = 0;
+                            wr0(el, 14);
+                            sc.commandDecode(el, &command, &operand);
+                        } else {
+                            wr0(el, 13);
+                        }
+                    } else {
+                        isData = 1;
+                        sc.commandEncode(command, operand, &el);
+                        wr1(el, 13);
+                        wr1(el, 14);
+                    }
                 } else if (activeBigChar == 1) {
-                    command++;
-                    if (command > 127)
-                        command = 0;
+                    if (!isData) {
+                        command++;
+                        if (command > 127)
+                            command = 0;
+                    } else {
+                        if ((el & !(0xFF)) == NEG_MAX)
+                            el = NEG_ZERO + (el & 0xFF);
+                        else if ((el & !(0xFF)) == POS_MAX)
+                            el = POS_ZERO + (el & 0xFF);
+                        else
+                            el += (1 << 8);
+                    }
                 } else if (activeBigChar == 2) {
-                    operand++;
-                    if (operand > 127)
-                        operand = 0;
+                    if (!isData) {
+                        operand++;
+                        if (operand > 127)
+                            operand = 0;
+                    } else {
+                        if (el == NEG_MAX)
+                            el = NEG_ZERO;
+                        else if (el == POS_MAX)
+                            el = POS_ZERO;
+                        else
+                            el++;
+                    }
                 }
             } else if (key == downKey) {
                 if (activeBigChar == 0) {
-                    // ????????
+                    if (getFlag(el, 14)) {
+                        if (!getFlag(el, 13)) {
+                            wr1(el, 13);
+                        } else {
+                            isData = 0;
+                            wr0(el, 14);
+                            sc.commandDecode(el, &command, &operand);
+                        }
+                    } else {
+                        isData = 1;
+                        sc.commandEncode(command, operand, &el);
+                        wr0(el, 13);
+                        wr1(el, 14);
+                    }
                 } else if (activeBigChar == 1) {
-                    command--;
-                    if (command < 0)
-                        command = 127;
+                    if (!isData) {
+                        command--;
+                        if (command < 0)
+                            command = 127;
+                    } else {
+                        if ((el & !(0xFF)) == NEG_ZERO)
+                            el = (NEG_MAX & !(0xFF)) + (el & 0xFF);
+                        else if ((el & !(0xFF)) == POS_ZERO)
+                            el = (POS_MAX & !(0xFF)) + (el & 0xFF);
+                        else
+                            el -= (1 << 8);
+                        if (el < 0)
+                            el += 8191;
+                    }
                 } else if (activeBigChar == 2) {
-                    operand--;
-                    if (operand < 0)
-                        operand = 127;
+                    if (!isData) {
+                        operand--;
+                        if (operand < 0)
+                            operand = 127;
+                    } else {
+                        if (el == NEG_ZERO)
+                            el = NEG_MAX;
+                        else if (el == POS_ZERO)
+                            el = POS_MAX;
+                        else
+                            el--;
+                    }
                 }
             }
             if (key == enter) {
-                sc.commandEncode(command, operand, &el);
+                if (!isData)
+                    sc.commandEncode(command, operand, &el);
                 sc.memorySet(activeCell, el);
             }
             if (key != zeroKey) {
-                regUpdate(bc, sc);
-                bigCharUpdate(bc, bigArr, command, operand, activeBigChar);
+                // regUpdate(bc, sc);
+                if (!isData) {
+                    bigCharUpdate(command, operand, bc, bigArr, activeBigChar);
+                } else
+                    bigCharUpdate(el, bc, bigArr, activeBigChar);
             }
         } while (key != enter);
         memUpdate(bc, sc, activeCell, bigArr);
@@ -232,7 +344,6 @@ int main()
     mySimpleComputer sc;
     bigChars bc;
     readKey rk;
-    int er;
     int activeCell = 0;
     int* bigArr = new int[36];
     char fileName[256] = "";
@@ -245,11 +356,11 @@ int main()
     int cnt;
     bc.bigCharRead(bigArr, 18, &cnt);
     if (cnt < 18) {
-        cout << "Потеряны большие символы\n";
+        cout << " Потеряны большие символы\n";
         return -1;
     }
     if (bc.gotoXY(24, 84) == M) {
-        cout << "Недостаточный размер терминала, минимум (24x84)\n";
+        cout << " Недостаточный размер терминала, минимум (24x84)\n";
         return -1;
     }
     bc.getscreensize(&termH, &termW);
@@ -262,8 +373,7 @@ int main()
     int el; // проверка заполнением
     for (int i = 0; i < 100; i++) {
         el = 0;
-        er = sc.commandEncode(10, i, &el);
-        error(er);
+        sc.commandEncode(10, i, &el);
         sc.memorySet(i, el);
     }
 
@@ -290,8 +400,9 @@ int main()
                 memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
             } while (strlen(fileName) == 4);
-            er = sc.memoryLoad(fileName);
-            error(er);
+            if (sc.memoryLoad(fileName))
+                clearInput(bc, "Файл " + string(fileName) + " не найден");
+            // !!!!!!!!!!!!! добавить задержку
             memUpdate(bc, sc, activeCell, bigArr);
             rk.mytermSave();
             break;
@@ -322,7 +433,7 @@ int main()
             break;
         case f6: // установление значения счётчика команд ---
             break;
-        case leftKey: // выбор ячейки влево ??
+        case leftKey: // выбор ячейки влево
             if (activeCell % 10 == 0) {
                 activeCell += 9;
             } else {
@@ -330,7 +441,7 @@ int main()
             }
             memUpdate(bc, sc, activeCell, bigArr);
             break;
-        case rightKey: // выбор ячейки вправо ??
+        case rightKey: // выбор ячейки вправо
             if (activeCell % 10 == 9) {
                 activeCell -= 9;
             } else {
@@ -338,7 +449,7 @@ int main()
             }
             memUpdate(bc, sc, activeCell, bigArr);
             break;
-        case upKey: // выбор ячейки вверх ??
+        case upKey: // выбор ячейки вверх
             if (activeCell <= 9) {
                 activeCell += 90;
             } else {
@@ -346,7 +457,7 @@ int main()
             }
             memUpdate(bc, sc, activeCell, bigArr);
             break;
-        case downKey: // выбор ячейки вниз ??
+        case downKey: // выбор ячейки вниз
             if (activeCell >= 90) {
                 activeCell -= 90;
             } else {

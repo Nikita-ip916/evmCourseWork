@@ -12,8 +12,8 @@ public:
             int* big,
             int x,
             int y,
-            enum colors fg = standard,
-            enum colors bg = standard);
+            enum colors fg = cl_default,
+            enum colors bg = cl_default);
     int setBigCharPos(int* big, int x, int y, int value);
     int getBigCharPos(int* big, int x, int y, int* value);
     int bigCharWrite(int* big, int count);

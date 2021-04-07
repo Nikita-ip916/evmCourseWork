@@ -43,8 +43,7 @@ int mySimpleComputer::memoryLoad(char* filename)
     FILE* fp;
     fp = fopen(filename, "rb");
     if (!fp) {
-        regSet(E, 1);
-        return E;
+        return -1;
     }
     fread(&arr, sizeof(int), n, fp);
     fclose(fp);
@@ -67,12 +66,10 @@ int mySimpleComputer::regSet(int reg, int value)
         else if (value == 1)
             wr1(regFlags, reg);
         else {
-            regSet(M, 1);
-            return M;
+            return -1;
         }
     else {
-        regSet(M, 1);
-        return M;
+        return -1;
     }
     return 0;
 }
@@ -82,8 +79,7 @@ int mySimpleComputer::regGet(int reg, int* value)
     if (reg > 0 && reg <= int(sizeof(char) * 8))
         *value = getFlag(regFlags, reg);
     else {
-        regSet(M, 1);
-        return M;
+        return -1;
     }
     return 0;
 }
@@ -93,8 +89,7 @@ int mySimpleComputer::accumulatorSet(int value)
     if (value < 1 << 14)
         accumulator = value;
     else {
-        regSet(M, 1);
-        return M;
+        return -1;
     }
     return 0;
 }
@@ -109,8 +104,7 @@ int mySimpleComputer::counterSet(int position)
     if (position < 1 << 7)
         counter = char(position);
     else {
-        regSet(M, 1);
-        return M;
+        return -1;
     }
     return 0;
 }
@@ -122,14 +116,14 @@ int mySimpleComputer::counterGet(int* position)
 
 int mySimpleComputer::commandEncode(int command, int operand, int* value)
 {
-    if (rightCommand(command) && operand >= 0 && operand < (1 << 7)) {
+    if (command >= 0 && command < (1 << 7) && operand >= 0
+        && operand < (1 << 7)) {
         *value = 0;
         *value |= operand;
         command <<= 7;
         *value |= command;
     } else {
-        regSet(E, 1);
-        return E;
+        return -1;
     }
     return 0;
 }
@@ -143,8 +137,7 @@ int mySimpleComputer::commandDecode(int value, int* command, int* operand)
         value &= ((1 << 7) - 1);
         *operand |= value;
     } else {
-        regSet(E, 1);
-        return E;
+        return -1;
     }
     return 0;
 }

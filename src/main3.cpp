@@ -58,21 +58,21 @@ int main()
 
     er = bc.box(10, 5, 19, 14);
     error(er);
-    er = bc.printBigChar(bigPair, 11, 6, red, black);
+    er = bc.printBigChar(bigPair, 11, 6, cl_red, cl_black);
     error(er);
     er = bc.getBigCharPos(bigPair, 2, 3, &tmp);
     error(er);
     er = bc.setBigCharPos(bigPair, 2, 3, 1 - tmp);
     error(er);
 
-    er = bc.printBigChar(bigPair, 11, 6, red, black);
+    er = bc.printBigChar(bigPair, 11, 6, cl_red, cl_black);
     error(er);
     er = bc.gotoXY(9, 15);
     error(er);
     bc.writeT("Количество считанных символов: " + to_string(cnt));
     er = bc.box(10, 15, 19, 24);
     error(er);
-    er = bc.printBigChar(bigPair2, 11, 16, cyan, black);
+    er = bc.printBigChar(bigPair2, 11, 16, cl_cyan, cl_black);
     error(er);
 
     er = bc.gotoXY(24, 1);

@@ -18,7 +18,17 @@ using namespace std;
 #ifndef MY_TERMINAL
 #define MY_TERMINAL
 
-enum colors { black, red, green, yellow, blue, magenta, cyan, gray, standard };
+enum colors {
+    cl_black,
+    cl_red,
+    cl_green,
+    cl_yellow,
+    cl_blue,
+    cl_magenta,
+    cl_cyan,
+    cl_gray,
+    cl_default
+};
 
 class myTerminal {
 protected:
@@ -36,8 +46,8 @@ public:
     int clrscr();
     int gotoXY(int x, int y);
     int getscreensize(int* rows, int* cols);
-    int setfgcolor(enum colors c = standard);
-    int setbgcolor(enum colors c = standard);
+    int setfgcolor(enum colors c = cl_default);
+    int setbgcolor(enum colors c = cl_default);
 };
 
 #endif
