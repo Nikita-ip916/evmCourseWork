@@ -3,6 +3,7 @@
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+
 #include <libmybigchars.hpp>
 #include <libmyreadkey.hpp>
 #include <libmyscomp.hpp>
@@ -15,11 +16,11 @@ using namespace std;
 int termW;
 int termH;
 
-#define POS_ZERO 0x6000
-#define NEG_ZERO 0x4000
+#define POS_ZERO 0x4000
+#define NEG_ZERO 0x6000
 
-#define POS_MAX 0x7FFF
-#define NEG_MAX 0x5FFF
+#define POS_MAX 0x5FFF
+#define NEG_MAX 0x7FFF
 
 #define error(er)         \
     if (er > 0) {         \
@@ -127,9 +128,8 @@ void bigCharUpdate(
             bc.printBigChar(bigPair, 14, 2 + j * 9, cl_black, cl_gray);
         else
             bc.printBigChar(bigPair, 14, 2 + j * 9);
+        bc.gotoXY(24, 84);
     }
-    if (active != -1)
-        clearInput(bc, "Измените значение ячейки памяти: ");
 }
 
 void bigCharUpdate(int data, bigChars& bc, int* bigArr, int active = -1)
@@ -153,9 +153,51 @@ void bigCharUpdate(int data, bigChars& bc, int* bigArr, int active = -1)
             bc.printBigChar(bigPair, 14, 2 + j * 9, cl_black, cl_gray);
         else
             bc.printBigChar(bigPair, 14, 2 + j * 9);
+        bc.gotoXY(24, 84);
     }
-    if (active != -1)
-        clearInput(bc, "Измените значение ячейки памяти: ");
+}
+
+void counterUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell)
+{
+    string value;
+    ostringstream s;
+    int counter;
+    sc.counterGet(&counter);
+
+    if (activeCell == 101) {
+        bc.setbgcolor(cl_gray);
+        bc.setfgcolor(cl_black);
+    }
+    s.str("");
+    s << setfill('0') << setw(4) << hex << counter;
+    value = s.str();
+    bc.gotoXY(5, 71);
+    bc.writeT(value);
+    bc.setbgcolor();
+    bc.setfgcolor();
+}
+
+void accumulatorUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell)
+{
+    string value;
+    ostringstream s;
+    int accum;
+    sc.accumulatorGet(&accum);
+
+    if (activeCell == 100) {
+        bc.setbgcolor(cl_gray);
+        bc.setfgcolor(cl_black);
+    }
+    s << setfill('0') << setw(4) << hex << (accum & 0x1FFF);
+    if (getFlag(accum, 13))
+        value = "-";
+    else
+        value = " ";
+    value += s.str();
+    bc.gotoXY(2, 70);
+    bc.writeT(value);
+    bc.setbgcolor();
+    bc.setfgcolor();
 }
 
 void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
@@ -198,6 +240,9 @@ void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
         bc.setbgcolor();
         bc.setfgcolor();
     }
+
+    accumulatorUpdate(bc, sc, activeCell);
+    counterUpdate(bc, sc, activeCell);
 }
 
 void changeValue(
@@ -208,9 +253,96 @@ void changeValue(
         int* bigArr)
 {
     if (activeCell == 100) {
-        // accumulator
+        int el;
+        sc.accumulatorGet(&el);
+        int activeBigChar = 0;
+        bigCharUpdate(el, bc, bigArr, activeBigChar);
+        keys key;
+        do {
+            key = zeroKey;
+            rk.readK(&key);
+            if (key == leftKey) {
+                activeBigChar--;
+                if (activeBigChar < 0)
+                    activeBigChar = 2;
+            } else if (key == rightKey) {
+                activeBigChar++;
+                if (activeBigChar > 2)
+                    activeBigChar = 0;
+            } else if (key == upKey) {
+                if (activeBigChar == 0) {
+                    if (getFlag(el, 13)) {
+                        wr0(el, 13);
+                    } else {
+                        wr1(el, 13);
+                    }
+                } else if (activeBigChar == 1) {
+                    if ((el | 0xFF) == NEG_MAX)
+                        el = (el & 0xFF) + NEG_ZERO;
+                    else if ((el | 0xFF) == POS_MAX)
+                        el = (el & 0xFF) + POS_ZERO;
+                    else
+                        el += (1 << 8);
+                } else if (activeBigChar == 2) {
+                    if (el == NEG_MAX)
+                        el = NEG_ZERO;
+                    else if (el == POS_MAX)
+                        el = POS_ZERO;
+                    else
+                        el++;
+                }
+            } else if (key == downKey) {
+                if (activeBigChar == 0) {
+                    if (getFlag(el, 13)) {
+                        wr0(el, 13);
+                    } else {
+                        wr1(el, 13);
+                    }
+                } else if (activeBigChar == 1) {
+                    if (el >> 8 == NEG_ZERO >> 8)
+                        el = (el & 0xFF) + ((NEG_MAX >> 8) << 8);
+                    else if (el >> 8 == POS_ZERO >> 8)
+                        el = (el & 0xFF) + ((POS_MAX >> 8) << 8);
+                    else
+                        el -= (1 << 8);
+                } else if (activeBigChar == 2) {
+                    if (el == NEG_ZERO)
+                        el = NEG_MAX;
+                    else if (el == POS_ZERO)
+                        el = POS_MAX;
+                    else
+                        el--;
+                }
+            }
+            if (key == enter) {
+                sc.accumulatorSet(el);
+                memUpdate(bc, sc, activeCell, bigArr);
+            }
+            if (key != zeroKey) {
+                bigCharUpdate(el, bc, bigArr, activeBigChar);
+            }
+        } while (key != enter);
     } else if (activeCell == 101) {
-        // instructionCounter
+        int el;
+        sc.counterGet(&el);
+        keys key;
+        do {
+            key = zeroKey;
+            rk.readK(&key);
+            if (key == upKey) {
+                el++;
+                if (el > 99)
+                    el = 0;
+            } else if (key == downKey) {
+                el--;
+                if (el < 0)
+                    el = 99;
+            }
+            sc.counterSet(el);
+            if (key != zeroKey)
+                memUpdate(bc, sc, activeCell, bigArr);
+            bc.gotoXY(24, 84);
+        } while (key != enter);
     } else if (activeCell >= 0 && activeCell <= 99) {
         int el, isData;
         int command = 0, operand = 0;
@@ -235,13 +367,13 @@ void changeValue(
                     activeBigChar = 0;
             } else if (key == upKey) {
                 if (activeBigChar == 0) {
-                    if (getFlag(el, 14)) {
-                        if (!getFlag(el, 13)) {
+                    if (isData) {
+                        if (getFlag(el, 13)) {
+                            wr0(el, 13);
+                        } else {
                             isData = 0;
                             wr0(el, 14);
                             sc.commandDecode(el, &command, &operand);
-                        } else {
-                            wr0(el, 13);
                         }
                     } else {
                         isData = 1;
@@ -255,10 +387,10 @@ void changeValue(
                         if (command > 127)
                             command = 0;
                     } else {
-                        if ((el & !(0xFF)) == NEG_MAX)
-                            el = NEG_ZERO + (el & 0xFF);
-                        else if ((el & !(0xFF)) == POS_MAX)
-                            el = POS_ZERO + (el & 0xFF);
+                        if ((el | 0xFF) == NEG_MAX)
+                            el = (el & 0xFF) + NEG_ZERO;
+                        else if ((el | 0xFF) == POS_MAX)
+                            el = (el & 0xFF) + POS_ZERO;
                         else
                             el += (1 << 8);
                     }
@@ -278,13 +410,13 @@ void changeValue(
                 }
             } else if (key == downKey) {
                 if (activeBigChar == 0) {
-                    if (getFlag(el, 14)) {
-                        if (!getFlag(el, 13)) {
-                            wr1(el, 13);
-                        } else {
+                    if (isData) {
+                        if (getFlag(el, 13)) {
                             isData = 0;
                             wr0(el, 14);
                             sc.commandDecode(el, &command, &operand);
+                        } else {
+                            wr1(el, 13);
                         }
                     } else {
                         isData = 1;
@@ -298,14 +430,12 @@ void changeValue(
                         if (command < 0)
                             command = 127;
                     } else {
-                        if ((el & !(0xFF)) == NEG_ZERO)
-                            el = (NEG_MAX & !(0xFF)) + (el & 0xFF);
-                        else if ((el & !(0xFF)) == POS_ZERO)
-                            el = (POS_MAX & !(0xFF)) + (el & 0xFF);
+                        if (el >> 8 == NEG_ZERO >> 8)
+                            el = (el & 0xFF) + ((NEG_MAX >> 8) << 8);
+                        else if (el >> 8 == POS_ZERO >> 8)
+                            el = (el & 0xFF) + ((POS_MAX >> 8) << 8);
                         else
                             el -= (1 << 8);
-                        if (el < 0)
-                            el += 8191;
                     }
                 } else if (activeBigChar == 2) {
                     if (!isData) {
@@ -326,6 +456,7 @@ void changeValue(
                 if (!isData)
                     sc.commandEncode(command, operand, &el);
                 sc.memorySet(activeCell, el);
+                memUpdate(bc, sc, activeCell, bigArr);
             }
             if (key != zeroKey) {
                 // regUpdate(bc, sc);
@@ -335,7 +466,6 @@ void changeValue(
                     bigCharUpdate(el, bc, bigArr, activeBigChar);
             }
         } while (key != enter);
-        memUpdate(bc, sc, activeCell, bigArr);
     }
 }
 
@@ -368,6 +498,7 @@ int main()
     bordersUpdate(bc, stInput);
 
     ////////////////////////////////////////////// Динамические подписи
+    sc.regSet(T, 1);
     regUpdate(bc, sc);
 
     int el; // проверка заполнением
@@ -383,96 +514,127 @@ int main()
     rk.mytermRegime(0, 0, 0, 0, 1);
     rk.mytermSave();
 
+    signal(SIGALRM, sc.signalHandler);
+    signal(SIGUSR1, sc.signalHandler);
+    // struct itimerval nval, oval;
+    // nval.it_interval.tv_sec = 3;
+    // nval.it_interval.tv_usec = 500;
+    // nval.it_value.tv_sec = 1;
+    // nval.it_value.tv_usec = 0;
+
+    // sc.accumulatorSet(100);
     keys key;
     do {
         key = zeroKey;
         rk.readK(&key);
-        switch (key) {
-        case zeroKey:
-            break;
-        case l: // загрузка ram из файла
-            rk.mytermRestore();
-            do {
-                clearInput(bc, fileNameInput);
-                rk.readS(fileName);
-                strcat(fileName, ".dat");
-                bordersUpdate(bc, stInput);
+        int ignore;
+        sc.regGet(T, &ignore);
+        if (ignore) {
+            switch (key) {
+            case zeroKey:
+                break;
+            case l: // загрузка ram из файла
+                rk.mytermRestore();
+                do {
+                    clearInput(bc, fileNameInput);
+                    rk.readS(fileName);
+                    strcat(fileName, ".dat");
+                    bordersUpdate(bc, stInput);
+                    memUpdate(bc, sc, activeCell, bigArr);
+                    regUpdate(bc, sc);
+                } while (strlen(fileName) == 4);
+                if (sc.memoryLoad(fileName))
+                    clearInput(bc, "Файл " + string(fileName) + " не найден");
+                // !!!!!!!!!!!!! добавить задержку
+                memUpdate(bc, sc, activeCell, bigArr);
+                rk.mytermSave();
+                break;
+            case s: // сохранение ram в файл
+                rk.mytermRestore();
+                do {
+                    clearInput(bc, fileNameInput);
+                    rk.readS(fileName);
+                    strcat(fileName, ".dat");
+                    bordersUpdate(bc, stInput);
+                    memUpdate(bc, sc, activeCell, bigArr);
+                    regUpdate(bc, sc);
+                } while (strlen(fileName) == 4);
+                sc.memorySave(fileName);
+                rk.mytermSave();
+                break;
+            case r: // запустить программу на выполнение ---
+                sc.regSet(T, 0);
+                regUpdate(bc, sc);
+                alarm(1);
+                // setitimer(ITIMER_REAL, &nval, &oval);
+                break;
+            case t: // выполнить только текущую команду ---
+                break;
+            case i: // сброс памяти и регистров до начальных
                 memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
-            } while (strlen(fileName) == 4);
-            if (sc.memoryLoad(fileName))
-                clearInput(bc, "Файл " + string(fileName) + " не найден");
-            // !!!!!!!!!!!!! добавить задержку
-            memUpdate(bc, sc, activeCell, bigArr);
-            rk.mytermSave();
-            break;
-        case s: // сохранение ram в файл
-            rk.mytermRestore();
-            do {
-                clearInput(bc, fileNameInput);
-                rk.readS(fileName);
-                strcat(fileName, ".dat");
-                bordersUpdate(bc, stInput);
+                break;
+            case f5: // установление значения аккумулятора
+                clearInput(bc, "Измените значение аккумулятора: ");
+                memUpdate(bc, sc, 100, bigArr);
+                changeValue(bc, sc, rk, 100, bigArr);
                 memUpdate(bc, sc, activeCell, bigArr);
-                regUpdate(bc, sc);
-            } while (strlen(fileName) == 4);
-            sc.memorySave(fileName);
-            rk.mytermSave();
-            break;
-        case r: // запустить программу на выполнение ---
-            break;
-        case t: // выполнить только текущую команду ---
-            break;
-        case i: // сброс памяти и регистров до начальных
-            sc.memoryInit();
-            sc.regInit();
-            memUpdate(bc, sc, activeCell, bigArr);
-            regUpdate(bc, sc);
-            break;
-        case f5: // установление значения аккумулятора ---
-            break;
-        case f6: // установление значения счётчика команд ---
-            break;
-        case leftKey: // выбор ячейки влево
-            if (activeCell % 10 == 0) {
-                activeCell += 9;
-            } else {
-                activeCell--;
+                break;
+            case f6: // установление значения счётчика команд
+                clearInput(bc, "Измените значение счётчика команд: ");
+                memUpdate(bc, sc, 101, bigArr);
+                changeValue(bc, sc, rk, 101, bigArr);
+                memUpdate(bc, sc, activeCell, bigArr);
+                break;
+            case leftKey: // выбор ячейки влево
+                if (activeCell % 10 == 0) {
+                    activeCell += 9;
+                } else {
+                    activeCell--;
+                }
+                memUpdate(bc, sc, activeCell, bigArr);
+                break;
+            case rightKey: // выбор ячейки вправо
+                if (activeCell % 10 == 9) {
+                    activeCell -= 9;
+                } else {
+                    activeCell++;
+                }
+                memUpdate(bc, sc, activeCell, bigArr);
+                break;
+            case upKey: // выбор ячейки вверх
+                if (activeCell <= 9) {
+                    activeCell += 90;
+                } else {
+                    activeCell -= 10;
+                }
+                memUpdate(bc, sc, activeCell, bigArr);
+                break;
+            case downKey: // выбор ячейки вниз
+                if (activeCell >= 90) {
+                    activeCell -= 90;
+                } else {
+                    activeCell += 10;
+                }
+                memUpdate(bc, sc, activeCell, bigArr);
+                break;
+            case enter:
+                clearInput(bc, "Измените значение ячейки памяти: ");
+                changeValue(bc, sc, rk, activeCell, bigArr);
+                break;
+            case q: // выход из программы
+                break;
             }
+        } else if (key == i) {
+            raise(SIGUSR1);
             memUpdate(bc, sc, activeCell, bigArr);
-            break;
-        case rightKey: // выбор ячейки вправо
-            if (activeCell % 10 == 9) {
-                activeCell -= 9;
-            } else {
-                activeCell++;
-            }
-            memUpdate(bc, sc, activeCell, bigArr);
-            break;
-        case upKey: // выбор ячейки вверх
-            if (activeCell <= 9) {
-                activeCell += 90;
-            } else {
-                activeCell -= 10;
-            }
-            memUpdate(bc, sc, activeCell, bigArr);
-            break;
-        case downKey: // выбор ячейки вниз
-            if (activeCell >= 90) {
-                activeCell -= 90;
-            } else {
-                activeCell += 10;
-            }
-            memUpdate(bc, sc, activeCell, bigArr);
-            break;
-        case enter:
-            changeValue(bc, sc, rk, activeCell, bigArr);
-            break;
-        case q: // выход из программы
-            break;
+        } else {
+            pause();
+            counterUpdate(bc, sc, activeCell);
         }
         if (key != zeroKey) {
             regUpdate(bc, sc);
+            counterUpdate(bc, sc, activeCell);
             clearInput(bc, stInput);
         }
     } while (key != q);

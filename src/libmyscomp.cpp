@@ -1,5 +1,10 @@
 #include "libmyscomp.hpp"
 
+int mySimpleComputer::arr[n];
+char mySimpleComputer::regFlags;
+char mySimpleComputer::counter;
+short int mySimpleComputer::accumulator;
+
 int mySimpleComputer::memoryInit()
 {
     for (int i = 0; i < n; i++)
@@ -12,8 +17,7 @@ int mySimpleComputer::memorySet(int address, int value)
     if (address >= 0 && address < n)
         arr[address] = value;
     else {
-        regSet(M, 1);
-        return M;
+        return -1;
     }
     return 0;
 }
@@ -23,8 +27,7 @@ int mySimpleComputer::memoryGet(int address, int* value)
     if (address >= 0 && address < n)
         *value = arr[address];
     else {
-        regSet(M, 1);
-        return M;
+        return -1;
     }
     return 0;
 }
@@ -54,7 +57,7 @@ int mySimpleComputer::regInit()
 {
     regFlags = 0;
     counter = 0;
-    accumulator = 0;
+    accumulator = 0x4000;
     return 0;
 }
 
@@ -86,7 +89,7 @@ int mySimpleComputer::regGet(int reg, int* value)
 
 int mySimpleComputer::accumulatorSet(int value)
 {
-    if (value < 1 << 14)
+    if (value < 1 << 15)
         accumulator = value;
     else {
         return -1;
@@ -140,4 +143,29 @@ int mySimpleComputer::commandDecode(int value, int* command, int* operand)
         return -1;
     }
     return 0;
+}
+
+void mySimpleComputer::signalHandler(int sigNum)
+{
+    // cout << "sdvsfsvv";
+    switch (sigNum) {
+    case SIGUSR1:
+        alarm(0);
+        memoryInit();
+        regInit();
+        regSet(T, 1);
+        break;
+    case SIGALRM:
+        int value, counter;
+        regGet(T, &value);
+        if (!value) {
+            counterGet(&counter);
+            counter++;
+            if (counter > 99)
+                counter = 0;
+            counterSet(counter);
+            alarm(1);
+        }
+        break;
+    }
 }

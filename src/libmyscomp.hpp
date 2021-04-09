@@ -1,6 +1,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <signal.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 using namespace std;
 
@@ -25,37 +28,35 @@ using namespace std;
 const int n = 100;
 
 class mySimpleComputer {
-    int arr[n];
-    char regFlags;
-    char counter;
-    short int accumulator;
+    static int arr[n];
+    static char regFlags;
+    static char counter;
+    static short int accumulator;
 
 public:
-    int memoryInit();
+    static int memoryInit();
 
-    int memorySet(int address, int value);
+    static int memorySet(int address, int value);
+    static int memoryGet(int address, int* value);
 
-    int memoryGet(int address, int* value);
+    static int memorySave(char* filename);
+    static int memoryLoad(char* filename);
 
-    int memorySave(char* filename);
+    static int regInit();
 
-    int memoryLoad(char* filename);
+    static int regSet(int reg, int value);
+    static int regGet(int reg, int* value);
 
-    int regInit();
+    static int accumulatorSet(int value);
+    static int accumulatorGet(int* value);
 
-    int regSet(int reg, int value);
+    static int counterSet(int position);
+    static int counterGet(int* position);
 
-    int regGet(int reg, int* value);
+    static int commandEncode(int command, int operand, int* value);
+    static int commandDecode(int value, int* command, int* operand);
 
-    int accumulatorSet(int value);
-    int accumulatorGet(int* value);
-
-    int counterSet(int position);
-    int counterGet(int* position);
-
-    int commandEncode(int command, int operand, int* value);
-
-    int commandDecode(int value, int* command, int* operand);
+    static void signalHandler(int sigNum);
 };
 
 #endif
