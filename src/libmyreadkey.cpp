@@ -6,7 +6,7 @@ int readKey::readS(char* str)
     char buf[256];
     if ((read_chars = read(fd, buf, 255)) > 0) {
         strncpy(str, buf, read_chars - 1);
-        str[read_chars] = '\0';
+        str[read_chars - 1] = '\0';
     }
     return 0;
 }

@@ -36,7 +36,7 @@ int myTerminal::gotoXY(int x, int y)
         write(fd, buf.c_str(), int(buf.length() + 1));
         return er;
     }
-    return M;
+    return -1;
 }
 int myTerminal::getscreensize(int* rows, int* cols)
 {
@@ -55,7 +55,7 @@ int myTerminal::setfgcolor(enum colors c)
 {
     string buf;
     if (c == 8)
-        buf = "\E[49m";
+        buf = "\E[39m";
     else
         buf = "\E[3" + to_string(c) + 'm';
     write(fd, buf.c_str(), 6);
@@ -65,7 +65,7 @@ int myTerminal::setbgcolor(enum colors c)
 {
     string buf;
     if (c == 8)
-        buf = "\E[39m";
+        buf = "\E[49m";
     else
         buf = "\E[4" + to_string(c) + 'm';
     write(fd, buf.c_str(), 6);

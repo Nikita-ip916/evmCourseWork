@@ -13,7 +13,7 @@ OUT = test.exe
 COWRK = courseWork.exe
 
 CPP = src/libmyscomp.cpp src/libmyterm.cpp src/libmybigchars.cpp src/libmyreadkey.cpp
-HEADERS = src/libmyscomp.hpp src/libmyterm.hpp src/libmybigchars.hpp src/libmyreadkey.hpp
+HEADERS = src/libmyscomp.hpp src/libmyterm.hpp src/libmybigchars.hpp src/libmyreadkey.hpp src/interface.hpp
 LIBS = lib/libmyscomp.a lib/libmyterm.a lib/libmybigchars.a lib/libmyreadkey.a
 
 all: bin/$(OUT)

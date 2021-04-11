@@ -9,6 +9,7 @@ int mySimpleComputer::memoryInit()
 {
     for (int i = 0; i < n; i++)
         arr[i] = 0;
+    accumulator = 0x4000;
     return 0;
 }
 
@@ -57,7 +58,6 @@ int mySimpleComputer::regInit()
 {
     regFlags = 0;
     counter = 0;
-    accumulator = 0x4000;
     return 0;
 }
 
@@ -147,11 +147,9 @@ int mySimpleComputer::commandDecode(int value, int* command, int* operand)
 
 void mySimpleComputer::signalHandler(int sigNum)
 {
-    // cout << "sdvsfsvv";
     switch (sigNum) {
     case SIGUSR1:
         alarm(0);
-        memoryInit();
         regInit();
         regSet(T, 1);
         break;
