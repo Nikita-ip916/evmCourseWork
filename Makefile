@@ -1,4 +1,4 @@
-.PHONY: all runprog clean stlib course runcourse
+.PHONY: all runlab clean stlib course run
 CXX = g++
 CXXFLAGS = -Wall -Werror
 CLIB = -std=c++11
@@ -19,13 +19,14 @@ LIBS = lib/libmyscomp.a lib/libmyterm.a lib/libmybigchars.a lib/libmyreadkey.a
 all: bin/$(OUT)
 
 bin/$(OUT): build/main.o
-		$(CXX) $< -o $@ $(MYLIBS)
+		$(CXX) $< -o $@
 
-build/main.o: src/main4.cpp $(HEADERS) $(LIBS)
+build/main.o: src/main5.cpp src/lab7.hpp
 		$(CXX) $(CXXFLAGS) -I src -c $< -o $@ $(CLIB)
 
-runprog:
+runlab:
 		./bin/$(OUT)
+
 
 course: bin/$(COWRK)
 
@@ -35,8 +36,9 @@ bin/$(COWRK): build/mainCourseWork.o
 build/mainCourseWork.o: src/mainCourseWork.cpp $(HEADERS) $(LIBS)
 		$(CXX) $(CXXFLAGS) -I src -c $< -o $@ $(CLIB)
 
-runcourse:
+run:
 		./bin/$(COWRK)
+
 
 stlib: $(LIBS)
 
