@@ -41,6 +41,9 @@ public:
     }
     void setfd(int);
     int getfd();
+
+    int setCursVis();
+    int setCursInv();
     void writeT(string);
 
     int clrscr();

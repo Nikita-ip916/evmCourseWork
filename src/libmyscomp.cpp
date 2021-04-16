@@ -2,7 +2,7 @@
 
 int mySimpleComputer::arr[n];
 char mySimpleComputer::regFlags;
-char mySimpleComputer::counter;
+char mySimpleComputer::instructionCounter;
 short int mySimpleComputer::accumulator;
 
 int mySimpleComputer::memoryInit()
@@ -57,7 +57,8 @@ int mySimpleComputer::memoryLoad(char* filename)
 int mySimpleComputer::regInit()
 {
     regFlags = 0;
-    counter = 0;
+    instructionCounter = 0;
+    regSet(T, 1);
     return 0;
 }
 
@@ -105,7 +106,7 @@ int mySimpleComputer::accumulatorGet(int* value)
 int mySimpleComputer::counterSet(int position)
 {
     if (position < 1 << 7)
-        counter = char(position);
+        instructionCounter = char(position);
     else {
         return -1;
     }
@@ -113,7 +114,7 @@ int mySimpleComputer::counterSet(int position)
 }
 int mySimpleComputer::counterGet(int* position)
 {
-    *position = int(counter);
+    *position = int(instructionCounter);
     return 0;
 }
 
@@ -154,16 +155,50 @@ void mySimpleComputer::signalHandler(int sigNum)
         regSet(T, 1);
         break;
     case SIGALRM:
-        int value, counter;
+        int value, instructionCounter;
         regGet(T, &value);
         if (!value) {
-            counterGet(&counter);
-            counter++;
-            if (counter > 99)
-                counter = 0;
-            counterSet(counter);
+            counterGet(&instructionCounter);
+            instructionCounter++;
+            if (instructionCounter > 99)
+                instructionCounter = 0;
+            counterSet(instructionCounter);
             alarm(1);
         }
         break;
     }
+}
+
+int mySimpleComputer::ALU(int command, int operand)
+{
+    if (command == 30) {
+    } else if (command == 31) {
+    } else if (command == 32) {
+    } else if (command == 33) {
+    } else if (command == 76) {
+    }
+    return 0;
+}
+
+int mySimpleComputer::CU()
+{
+    int command, operand;
+    if (operand < 0 || operand > 99)
+        return -1;
+    commandDecode(arr[instructionCounter], &command, &operand);
+    if (ALUcommand(command)) {
+        if (ALU(command, operand))
+            return -1;
+    } else if (command == 10) {
+    } else if (command == 11) {
+    } else if (command == 20) {
+    } else if (command == 21) {
+    } else if (command == 40) {
+    } else if (command == 41) {
+    } else if (command == 42) {
+    } else if (command == 43) {
+    } else {
+        return -1;
+    }
+    return 0;
 }

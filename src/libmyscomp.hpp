@@ -16,10 +16,12 @@ using namespace std;
 #define T 4 // игнорирование тактовых импульсов
 #define E 5 // указана неверная команда
 
-#define rightCommand(command)                                                \
-    ((command >= 10 && command <= 11) || (command >= 20 && command <= 21)    \
-     || (command >= 30 && command <= 33) || (command >= 40 && command <= 43) \
-     || (command == 76))
+#define ALUcommand(command) \
+    ((command >= 30 && command <= 33) || (command == 76))
+
+#define CUcommand(command)                                                \
+    ((command >= 10 && command <= 11) || (command >= 20 && command <= 21) \
+     || (command >= 40 && command <= 43))
 
 #define wr1(regFlags, reg) regFlags |= (1 << reg)
 #define wr0(regFlags, reg) regFlags &= ~(1 << reg)
@@ -30,7 +32,7 @@ const int n = 100;
 class mySimpleComputer {
     static int arr[n];
     static char regFlags;
-    static char counter;
+    static char instructionCounter;
     static short int accumulator;
 
 public:
@@ -57,6 +59,9 @@ public:
     static int commandDecode(int value, int* command, int* operand);
 
     static void signalHandler(int sigNum);
+
+    static int ALU(int command, int operand);
+    static int CU();
 };
 
 #endif

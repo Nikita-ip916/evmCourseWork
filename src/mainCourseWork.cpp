@@ -47,7 +47,6 @@ int main()
     bordersUpdate(bc, stInput);
 
     ////////////////////////////////////////////// Динамические подписи
-    sc.regSet(T, 1);
     regUpdate(bc, sc);
 
     int el; // проверка заполнением
@@ -59,6 +58,7 @@ int main()
     memUpdate(bc, sc, activeCell, bigArr);
 
     clearInput(bc, stInput);
+    bc.setCursInv();
     rk.mytermRegime(0, 0, 0, 0, 1);
     rk.mytermSave();
 
@@ -81,6 +81,7 @@ int main()
             case zeroKey:
                 break;
             case l: // загрузка ram из файла
+                bc.setCursVis();
                 rk.mytermRestore();
                 do {
                     clearInput(bc, fileNameInput);
@@ -90,6 +91,7 @@ int main()
                     memUpdate(bc, sc, activeCell, bigArr);
                     regUpdate(bc, sc);
                 } while (strlen(fileName) == 4);
+                bc.setCursInv();
                 if (sc.memoryLoad(fileName)) {
                     clearInput(bc, "Файл " + string(fileName) + " не найден");
                     bc.gotoXY(24, 84);
@@ -100,6 +102,7 @@ int main()
                 rk.mytermSave();
                 break;
             case s: // сохранение ram в файл
+                bc.setCursVis();
                 rk.mytermRestore();
                 do {
                     clearInput(bc, fileNameInput);
@@ -109,12 +112,13 @@ int main()
                     memUpdate(bc, sc, activeCell, bigArr);
                     regUpdate(bc, sc);
                 } while (strlen(fileName) == 4);
+                bc.setCursInv();
                 sc.memorySave(fileName);
                 fileName[256] = {0};
                 rk.mytermSave();
                 break;
             case r: // запустить программу на выполнение ---
-                clearInput(bc, "Идёт выполнение программы... ");
+                clearInput(bc, "");
                 sc.regSet(T, 0);
                 regUpdate(bc, sc);
                 alarm(1);
@@ -123,6 +127,8 @@ int main()
             case t: // выполнить только текущую команду ---
                 break;
             case i: // сброс памяти и регистров до начальных
+                sc.memoryInit();
+                sc.regInit();
                 memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
                 break;
@@ -186,11 +192,13 @@ int main()
             memUpdate(bc, sc, activeCell, bigArr);
             bc.gotoXY(24, 84);
         }
-        if (key != zeroKey) {
+        if (key != zeroKey && key != r) {
             regUpdate(bc, sc);
             clearInput(bc, stInput);
         }
     } while (key != q);
+
+    bc.setCursVis();
     bc.clrscr();
     rk.mytermRestore();
     return 0;

@@ -482,6 +482,7 @@ void changeValue(
                     bigCharUpdate(el, bc, bigArr, activeBigChar);
             }
         } while (key != enter);
+        memUpdate(bc, sc, activeCell, bigArr);
     }
 }
 

@@ -17,6 +17,18 @@ void myTerminal::setfd(int Fd)
 {
     fd = Fd;
 }
+int myTerminal::setCursVis()
+{
+    char buf[] = "\E[?25h\E[?8c";
+    write(fd, buf, 12);
+    return 0;
+}
+int myTerminal::setCursInv()
+{
+    char buf[] = "\E[?25l\E[?1c";
+    write(fd, buf, 12);
+    return 0;
+}
 void myTerminal::writeT(string buf)
 {
     write(fd, buf.c_str(), int(buf.length() + 1));
