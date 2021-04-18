@@ -47,6 +47,7 @@ int a_idechs2large(tIDECHS i_geom, tLARGE l_geom, tIDECHS idechs, tLARGE* chs);
 int a_large2lba(tLARGE geom, tLARGE chs, tLBA* lba);
 int a_large2chs(tLARGE l_geom, tCHS c_geom, tLARGE large, tCHS* chs);
 int a_large2idechs(tLARGE l_geom, tIDECHS i_geom, tLARGE large, tIDECHS* chs);
+
 int g_lba2chs(tLBA lba_geometry, tCHS* chs_geometry)
 {
     tCHS best = {0, 0, 63};

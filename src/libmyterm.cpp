@@ -9,6 +9,7 @@
 
 // echo
 // -e"\E[H\E[J\E[5;10H\E[31m\E[40mНикитаЧигвинцев\E[6;8H\E[32m\E[47mИП-916\E[10;1H\E[m"
+int myTerminal::fd;
 int myTerminal::getfd()
 {
     return fd;

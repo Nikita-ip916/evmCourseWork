@@ -1,7 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
-#include <libmyscomp.hpp>
 #include <string>
 
 using namespace std;
@@ -18,6 +17,10 @@ using namespace std;
 #ifndef MY_TERMINAL
 #define MY_TERMINAL
 
+#define wr1(regFlags, reg) regFlags |= (1 << reg)
+#define wr0(regFlags, reg) regFlags &= ~(1 << reg)
+#define getFlag(regFlags, reg) (regFlags >> reg) & 1
+
 enum colors {
     cl_black,
     cl_red,
@@ -32,25 +35,25 @@ enum colors {
 
 class myTerminal {
 protected:
-    int fd;
+    static int fd;
 
 public:
     myTerminal()
     {
         fd = 0;
     }
-    void setfd(int);
-    int getfd();
+    static void setfd(int);
+    static int getfd();
 
-    int setCursVis();
-    int setCursInv();
-    void writeT(string);
+    static int setCursVis();
+    static int setCursInv();
+    static void writeT(string);
 
-    int clrscr();
-    int gotoXY(int x, int y);
-    int getscreensize(int* rows, int* cols);
-    int setfgcolor(enum colors c = cl_default);
-    int setbgcolor(enum colors c = cl_default);
+    static int clrscr();
+    static int gotoXY(int x, int y);
+    static int getscreensize(int* rows, int* cols);
+    static int setfgcolor(enum colors c = cl_default);
+    static int setbgcolor(enum colors c = cl_default);
 };
 
 #endif

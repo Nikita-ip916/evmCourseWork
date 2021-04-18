@@ -1,6 +1,6 @@
 #include "libmyscomp.hpp"
 
-int mySimpleComputer::arr[n];
+int mySimpleComputer::memory[n];
 char mySimpleComputer::regFlags;
 char mySimpleComputer::instructionCounter;
 short int mySimpleComputer::accumulator;
@@ -8,7 +8,7 @@ short int mySimpleComputer::accumulator;
 int mySimpleComputer::memoryInit()
 {
     for (int i = 0; i < n; i++)
-        arr[i] = 0;
+        memory[i] = 0;
     accumulator = 0x4000;
     return 0;
 }
@@ -16,7 +16,7 @@ int mySimpleComputer::memoryInit()
 int mySimpleComputer::memorySet(int address, int value)
 {
     if (address >= 0 && address < n)
-        arr[address] = value;
+        memory[address] = value;
     else {
         return -1;
     }
@@ -26,7 +26,7 @@ int mySimpleComputer::memorySet(int address, int value)
 int mySimpleComputer::memoryGet(int address, int* value)
 {
     if (address >= 0 && address < n)
-        *value = arr[address];
+        *value = memory[address];
     else {
         return -1;
     }
@@ -37,7 +37,7 @@ int mySimpleComputer::memorySave(char* filename)
 {
     FILE* fp;
     fp = fopen(filename, "wb");
-    fwrite(&arr, sizeof(int), n, fp);
+    fwrite(&memory, sizeof(int), n, fp);
     fclose(fp);
     return 0;
 }
@@ -49,7 +49,7 @@ int mySimpleComputer::memoryLoad(char* filename)
     if (!fp) {
         return -1;
     }
-    fread(&arr, sizeof(int), n, fp);
+    fread(&memory, sizeof(int), n, fp);
     fclose(fp);
     return 0;
 }
@@ -163,7 +163,10 @@ void mySimpleComputer::signalHandler(int sigNum)
             if (instructionCounter > 99)
                 instructionCounter = 0;
             counterSet(instructionCounter);
-            alarm(1);
+            if (CU())
+                raise(SIGUSR1);
+            else
+                alarm(1);
         }
         break;
     }
@@ -172,6 +175,22 @@ void mySimpleComputer::signalHandler(int sigNum)
 int mySimpleComputer::ALU(int command, int operand)
 {
     if (command == 30) {
+        if (!(((accumulator << 13) & 1) ^ ((memory[operand] << 13) & 1))) {
+            if ((accumulator & ((1 << 13) - 1))
+                        + (memory[operand] & ((1 << 13) - 1))
+                < (1 << 13)) {
+                accumulator += (memory[operand] & ((1 << 13) - 1));
+            } else {
+                regSet(P, 1);
+            }
+        } else {
+            if ((accumulator & ((1 << 13) - 1))
+                >= (memory[operand] & ((1 << 13) - 1))) {
+                accumulator -= (memory[operand] & ((1 << 13) - 1));
+            } else {
+                accumulator = memory[operand] - (accumulator & ((1 << 13) - 1));
+            }
+        }
     } else if (command == 31) {
     } else if (command == 32) {
     } else if (command == 33) {
@@ -180,16 +199,49 @@ int mySimpleComputer::ALU(int command, int operand)
     return 0;
 }
 
+void mySimpleComputer::clrInput()
+{
+    string str;
+    for (int i = str.length() + 1; i <= 84; i++)
+        str += " ";
+    gotoXY(24, 1);
+    writeT(str);
+    gotoXY(24, 1);
+}
+
 int mySimpleComputer::CU()
 {
     int command, operand;
-    if (operand < 0 || operand > 99)
+    if (operand < 0 || operand > 99) {
+        regSet(E, 1);
         return -1;
-    commandDecode(arr[instructionCounter], &command, &operand);
+    }
+    if (commandDecode(memory[instructionCounter], &command, &operand)) {
+        regSet(E, 1);
+        return -1;
+    }
     if (ALUcommand(command)) {
         if (ALU(command, operand))
             return -1;
     } else if (command == 10) {
+        setCursVis();
+        mytermRestore();
+        char buffer[256] = "";
+        readS(buffer);
+        int val = 0;
+        stringstream stream;
+        stream << buffer;
+        stream >> val;
+        if (stream.fail()) {
+            regSet(P, 1);
+        } else if (val >= 0) {
+            memory[operand] = (1 << 14) + (val & ((1 << 13) - 1));
+        } else if (val < 0) {
+            memory[operand] = (1 << 14) + (1 << 13) + (val & ((1 << 13) - 1));
+        }
+        clrInput();
+        setCursInv();
+        mytermSave();
     } else if (command == 11) {
     } else if (command == 20) {
     } else if (command == 21) {
@@ -198,6 +250,7 @@ int mySimpleComputer::CU()
     } else if (command == 42) {
     } else if (command == 43) {
     } else {
+        regSet(E, 1);
         return -1;
     }
     return 0;

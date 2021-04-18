@@ -263,11 +263,7 @@ void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
 }
 
 void changeValue(
-        bigChars& bc,
-        mySimpleComputer& sc,
-        readKey& rk,
-        int activeCell,
-        int* bigArr)
+        bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
 {
     if (activeCell == 100) {
         int el;
@@ -277,7 +273,7 @@ void changeValue(
         keys key;
         do {
             key = zeroKey;
-            rk.readK(&key);
+            sc.readK(&key);
             if (key == leftKey) {
                 activeBigChar--;
                 if (activeBigChar < 0)
@@ -345,7 +341,7 @@ void changeValue(
         keys key;
         do {
             key = zeroKey;
-            rk.readK(&key);
+            sc.readK(&key);
             if (key == upKey) {
                 el++;
                 if (el > 99)
@@ -373,7 +369,7 @@ void changeValue(
         keys key;
         do {
             key = zeroKey;
-            rk.readK(&key);
+            sc.readK(&key);
             if (key == leftKey) {
                 activeBigChar--;
                 if (activeBigChar < 0)

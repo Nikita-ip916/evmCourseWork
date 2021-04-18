@@ -133,7 +133,7 @@ int bigChars::bigCharRead(int* big, int needCount, int* count)
     FILE* fp;
     fp = fopen("bcData.dat", "rb");
     if (!fp) {
-        return E;
+        return -1;
     }
     *count = 0;
     for (int i = 0; i < needCount; i++) {

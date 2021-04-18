@@ -22,7 +22,6 @@ int main()
     srand(time(0));
     mySimpleComputer sc;
     bigChars bc;
-    readKey rk;
     int activeCell = 0;
     int* bigArr = new int[36];
     char fileName[256] = "";
@@ -38,8 +37,8 @@ int main()
         cout << " Потеряны большие символы\n";
         return -1;
     }
-    if (bc.gotoXY(24, 84) == -1) {
-        cout << " Недостаточный размер терминала, минимум (24x84)\n";
+    if (bc.gotoXY(30, 84) == -1) {
+        cout << " Недостаточный размер терминала, минимум (30x84)\n";
         return -1;
     }
     bc.getscreensize(&termH, &termW);
@@ -59,8 +58,8 @@ int main()
 
     clearInput(bc, stInput);
     bc.setCursInv();
-    rk.mytermRegime(0, 0, 0, 0, 1);
-    rk.mytermSave();
+    sc.mytermRegime(0, 0, 0, 0, 1);
+    sc.mytermSave();
 
     signal(SIGALRM, sc.signalHandler);
     signal(SIGUSR1, sc.signalHandler);
@@ -73,7 +72,7 @@ int main()
     keys key;
     do {
         key = zeroKey;
-        rk.readK(&key);
+        sc.readK(&key);
         int ignore;
         sc.regGet(T, &ignore);
         if (ignore) {
@@ -82,10 +81,10 @@ int main()
                 break;
             case l: // загрузка ram из файла
                 bc.setCursVis();
-                rk.mytermRestore();
+                sc.mytermRestore();
                 do {
                     clearInput(bc, fileNameInput);
-                    rk.readS(fileName);
+                    sc.readS(fileName);
                     strcat(fileName, ".dat");
                     bordersUpdate(bc, stInput);
                     memUpdate(bc, sc, activeCell, bigArr);
@@ -99,14 +98,14 @@ int main()
                 }
                 fileName[256] = {0};
                 memUpdate(bc, sc, activeCell, bigArr);
-                rk.mytermSave();
+                sc.mytermSave();
                 break;
             case s: // сохранение ram в файл
                 bc.setCursVis();
-                rk.mytermRestore();
+                sc.mytermRestore();
                 do {
                     clearInput(bc, fileNameInput);
-                    rk.readS(fileName);
+                    sc.readS(fileName);
                     strcat(fileName, ".dat");
                     bordersUpdate(bc, stInput);
                     memUpdate(bc, sc, activeCell, bigArr);
@@ -115,16 +114,33 @@ int main()
                 bc.setCursInv();
                 sc.memorySave(fileName);
                 fileName[256] = {0};
-                rk.mytermSave();
+                sc.mytermSave();
                 break;
             case r: // запустить программу на выполнение ---
                 clearInput(bc, "");
                 sc.regSet(T, 0);
                 regUpdate(bc, sc);
+                if (sc.CU()) {
+                    raise(SIGUSR1);
+                    memUpdate(bc, sc, activeCell, bigArr);
+                }
                 alarm(1);
                 // setitimer(ITIMER_REAL, &nval, &oval);
                 break;
             case t: // выполнить только текущую команду ---
+                clearInput(bc, "");
+                int tmp;
+                if (sc.CU()) {
+                    raise(SIGUSR1);
+                    memUpdate(bc, sc, activeCell, bigArr);
+                }
+                sc.counterGet(&tmp);
+                tmp++;
+                if (tmp > 99)
+                    tmp = 0;
+                sc.counterSet(tmp);
+                activeCell = tmp;
+                memUpdate(bc, sc, activeCell, bigArr);
                 break;
             case i: // сброс памяти и регистров до начальных
                 sc.memoryInit();
@@ -135,13 +151,13 @@ int main()
             case f5: // установление значения аккумулятора
                 clearInput(bc, "Измените значение аккумулятора: ");
                 memUpdate(bc, sc, 100, bigArr);
-                changeValue(bc, sc, rk, 100, bigArr);
+                changeValue(bc, sc, 100, bigArr);
                 memUpdate(bc, sc, activeCell, bigArr);
                 break;
             case f6: // установление значения счётчика команд
                 clearInput(bc, "Измените значение счётчика команд: ");
                 memUpdate(bc, sc, 101, bigArr);
-                changeValue(bc, sc, rk, 101, bigArr);
+                changeValue(bc, sc, 101, bigArr);
                 memUpdate(bc, sc, activeCell, bigArr);
                 break;
             case leftKey: // выбор ячейки влево
@@ -178,7 +194,7 @@ int main()
                 break;
             case enter:
                 clearInput(bc, "Измените значение ячейки памяти: ");
-                changeValue(bc, sc, rk, activeCell, bigArr);
+                changeValue(bc, sc, activeCell, bigArr);
                 break;
             case q: // выход из программы
                 break;
@@ -187,12 +203,12 @@ int main()
             raise(SIGUSR1);
             memUpdate(bc, sc, activeCell, bigArr);
         } else {
+            key = zeroKey;
             pause();
             sc.counterGet(&activeCell);
             memUpdate(bc, sc, activeCell, bigArr);
-            bc.gotoXY(24, 84);
         }
-        if (key != zeroKey && key != r) {
+        if (key != zeroKey && key != r && key != t) { // !!!
             regUpdate(bc, sc);
             clearInput(bc, stInput);
         }
@@ -200,6 +216,6 @@ int main()
 
     bc.setCursVis();
     bc.clrscr();
-    rk.mytermRestore();
+    sc.mytermRestore();
     return 0;
 }

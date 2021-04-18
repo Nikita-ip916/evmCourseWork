@@ -1,5 +1,7 @@
 #include "libmyreadkey.hpp"
 
+struct termios readKey::savedAttr;
+struct termios readKey::newAttr;
 int readKey::readS(char* str)
 {
     int read_chars;

@@ -1,4 +1,3 @@
-#include <libmyscomp.hpp>
 #include <libmyterm.hpp>
 #include <string.h>
 
@@ -23,15 +22,15 @@ enum keys {
 };
 
 class readKey : public myTerminal {
-    struct termios savedAttr;
-    struct termios newAttr;
+    static struct termios savedAttr;
+    static struct termios newAttr;
 
 public:
-    int readS(char* str);
-    int readK(enum keys* key);
-    int mytermSave();
-    int mytermRestore();
-    int mytermRegime(
+    static int readS(char* str);
+    static int readK(enum keys* key);
+    static int mytermSave();
+    static int mytermRestore();
+    static int mytermRegime(
             int regime,
             int vtime = 0,
             int vmin = 0,

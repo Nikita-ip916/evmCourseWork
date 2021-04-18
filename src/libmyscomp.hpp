@@ -1,7 +1,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include <libmyreadkey.hpp>
 #include <signal.h>
+#include <sstream>
 #include <sys/time.h>
 #include <unistd.h>
 
@@ -23,14 +25,10 @@ using namespace std;
     ((command >= 10 && command <= 11) || (command >= 20 && command <= 21) \
      || (command >= 40 && command <= 43))
 
-#define wr1(regFlags, reg) regFlags |= (1 << reg)
-#define wr0(regFlags, reg) regFlags &= ~(1 << reg)
-#define getFlag(regFlags, reg) (regFlags >> reg) & 1
-
 const int n = 100;
 
-class mySimpleComputer {
-    static int arr[n];
+class mySimpleComputer : public readKey {
+    static int memory[n];
     static char regFlags;
     static char instructionCounter;
     static short int accumulator;
@@ -59,6 +57,8 @@ public:
     static int commandDecode(int value, int* command, int* operand);
 
     static void signalHandler(int sigNum);
+
+    static void clrInput();
 
     static int ALU(int command, int operand);
     static int CU();
