@@ -4,6 +4,8 @@ int mySimpleComputer::memory[n];
 char mySimpleComputer::regFlags;
 char mySimpleComputer::instructionCounter;
 short int mySimpleComputer::accumulator;
+int mySimpleComputer::posInput;
+int mySimpleComputer::posOutput;
 
 int mySimpleComputer::memoryInit()
 {
@@ -58,6 +60,8 @@ int mySimpleComputer::regInit()
 {
     regFlags = 0;
     instructionCounter = 0;
+    posInput = 0;
+    posOutput = 0;
     regSet(T, 1);
     return 0;
 }
@@ -174,7 +178,7 @@ void mySimpleComputer::signalHandler(int sigNum)
 
 int mySimpleComputer::ALU(int command, int operand)
 {
-    if (command == 30) {
+    if (command == 30) { // ADD **
         if (!(((accumulator << 13) & 1) ^ ((memory[operand] << 13) & 1))) {
             if ((accumulator & ((1 << 13) - 1))
                         + (memory[operand] & ((1 << 13) - 1))
@@ -191,65 +195,77 @@ int mySimpleComputer::ALU(int command, int operand)
                 accumulator = memory[operand] - (accumulator & ((1 << 13) - 1));
             }
         }
-    } else if (command == 31) {
-    } else if (command == 32) {
-    } else if (command == 33) {
-    } else if (command == 76) {
+    } else if (command == 31) { // SUB ***
+    } else if (command == 32) { // DIVIDE ***
+    } else if (command == 33) { // MUL ***
+    } else if (command == 76) { // SUBC ***
     }
     return 0;
 }
 
-void mySimpleComputer::clrInput()
+void mySimpleComputer::clearString(string str, bool isInput)
 {
-    string str;
+    int tmp = str.length() + 1;
     for (int i = str.length() + 1; i <= 84; i++)
         str += " ";
-    gotoXY(24, 1);
+    if (isInput)
+        gotoXY(24, 1);
+    else
+        gotoXY(25, 1);
     writeT(str);
-    gotoXY(24, 1);
+    if (isInput) {
+        posInput = tmp;
+        gotoXY(24, tmp - 15);
+    } else {
+        posOutput = tmp;
+        gotoXY(25, tmp - 15);
+    }
 }
 
 int mySimpleComputer::CU()
 {
     int command, operand;
-    if (operand < 0 || operand > 99) {
-        regSet(E, 1);
-        return -1;
-    }
     if (commandDecode(memory[instructionCounter], &command, &operand)) {
         regSet(E, 1);
         return -1;
-    }
-    if (ALUcommand(command)) {
+    } else if (operand < 0 || operand > 99) {
+        regSet(E, 1);
+        return -1;
+    } else if (ALUcommand(command)) {
         if (ALU(command, operand))
             return -1;
-    } else if (command == 10) {
-        setCursVis();
+    } else if (command == 10) { // READ **
         mytermRestore();
+        setCursVis();
         char buffer[256] = "";
+        gotoXY(24, posInput);
         readS(buffer);
         int val = 0;
         stringstream stream;
         stream << buffer;
-        stream >> val;
+        stream >> hex >> val;
         if (stream.fail()) {
             regSet(P, 1);
+            setCursInv();
+            mytermSave();
+            return -1;
         } else if (val >= 0) {
             memory[operand] = (1 << 14) + (val & ((1 << 13) - 1));
+            posInput += strlen(buffer) + 1;
         } else if (val < 0) {
             memory[operand] = (1 << 14) + (1 << 13) + (val & ((1 << 13) - 1));
+            posInput += strlen(buffer) + 1;
         }
-        clrInput();
         setCursInv();
         mytermSave();
-    } else if (command == 11) {
-    } else if (command == 20) {
-    } else if (command == 21) {
-    } else if (command == 40) {
-    } else if (command == 41) {
-    } else if (command == 42) {
-    } else if (command == 43) {
-    } else {
+    } else if (command == 11) { // WRITE ***
+    } else if (command == 20) { // LOAD *
+    } else if (command == 21) { // STORE *
+    } else if (command == 40) { // JUMP *
+    } else if (command == 41) { // JNEG *
+    } else if (command == 42) { // JZ *
+    } else if (command == 43) { // HALT *
+    } else {                    // Invalid command
         regSet(E, 1);
         return -1;
     }

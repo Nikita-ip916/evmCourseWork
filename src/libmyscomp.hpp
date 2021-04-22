@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <libmyreadkey.hpp>
 #include <signal.h>
@@ -32,6 +33,8 @@ class mySimpleComputer : public readKey {
     static char regFlags;
     static char instructionCounter;
     static short int accumulator;
+    static int posInput;
+    static int posOutput;
 
 public:
     static int memoryInit();
@@ -58,7 +61,7 @@ public:
 
     static void signalHandler(int sigNum);
 
-    static void clrInput();
+    static void clearString(string str, bool isInput = true);
 
     static int ALU(int command, int operand);
     static int CU();

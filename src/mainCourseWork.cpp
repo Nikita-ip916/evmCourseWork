@@ -43,7 +43,7 @@ int main()
     }
     bc.getscreensize(&termH, &termW);
 
-    bordersUpdate(bc, stInput);
+    bordersUpdate(bc, sc, stInput);
 
     ////////////////////////////////////////////// Динамические подписи
     regUpdate(bc, sc);
@@ -56,7 +56,7 @@ int main()
 
     memUpdate(bc, sc, activeCell, bigArr);
 
-    clearInput(bc, stInput);
+    sc.clearString(stInput);
     bc.setCursInv();
     sc.mytermRegime(0, 0, 0, 0, 1);
     sc.mytermSave();
@@ -83,16 +83,16 @@ int main()
                 bc.setCursVis();
                 sc.mytermRestore();
                 do {
-                    clearInput(bc, fileNameInput);
+                    sc.clearString(fileNameInput);
                     sc.readS(fileName);
                     strcat(fileName, ".dat");
-                    bordersUpdate(bc, stInput);
+                    bordersUpdate(bc, sc, stInput);
                     memUpdate(bc, sc, activeCell, bigArr);
                     regUpdate(bc, sc);
                 } while (strlen(fileName) == 4);
                 bc.setCursInv();
                 if (sc.memoryLoad(fileName)) {
-                    clearInput(bc, "Файл " + string(fileName) + " не найден");
+                    sc.clearString("Файл " + string(fileName) + " не найден");
                     bc.gotoXY(24, 84);
                     sleep(2);
                 }
@@ -104,10 +104,10 @@ int main()
                 bc.setCursVis();
                 sc.mytermRestore();
                 do {
-                    clearInput(bc, fileNameInput);
+                    sc.clearString(fileNameInput);
                     sc.readS(fileName);
                     strcat(fileName, ".dat");
-                    bordersUpdate(bc, stInput);
+                    bordersUpdate(bc, sc, stInput);
                     memUpdate(bc, sc, activeCell, bigArr);
                     regUpdate(bc, sc);
                 } while (strlen(fileName) == 4);
@@ -117,30 +117,48 @@ int main()
                 sc.mytermSave();
                 break;
             case r: // запустить программу на выполнение ---
-                clearInput(bc, "");
+                sc.clearString("Input: ");
+                sc.clearString("Output: ", 0);
                 sc.regSet(T, 0);
                 regUpdate(bc, sc);
                 if (sc.CU()) {
+                    regUpdate(bc, sc);
                     raise(SIGUSR1);
                     memUpdate(bc, sc, activeCell, bigArr);
+                    sc.clearString("Возникла ошибка!");
+                    sc.clearString("", 0);
+                    sleep(2);
+                } else {
+                    alarm(1);
+                    // setitimer(ITIMER_REAL, &nval, &oval);
                 }
-                alarm(1);
-                // setitimer(ITIMER_REAL, &nval, &oval);
                 break;
             case t: // выполнить только текущую команду ---
-                clearInput(bc, "");
+                sc.clearString("Input: ");
+                sc.clearString("Output: ", 0);
                 int tmp;
+                sc.regSet(T, 0);
+                regUpdate(bc, sc);
                 if (sc.CU()) {
+                    regUpdate(bc, sc);
                     raise(SIGUSR1);
                     memUpdate(bc, sc, activeCell, bigArr);
+                    sc.clearString("Возникла ошибка!");
+                    sc.clearString("", 0);
+                    sleep(2);
+                } else {
+                    sc.regSet(T, 1);
+                    regUpdate(bc, sc);
+                    sc.counterGet(&tmp);
+                    tmp++;
+                    if (tmp > 99)
+                        tmp = 0;
+                    sc.counterSet(tmp);
+                    activeCell = tmp;
                 }
-                sc.counterGet(&tmp);
-                tmp++;
-                if (tmp > 99)
-                    tmp = 0;
-                sc.counterSet(tmp);
-                activeCell = tmp;
+                bordersUpdate(bc, sc, stInput);
                 memUpdate(bc, sc, activeCell, bigArr);
+                regUpdate(bc, sc);
                 break;
             case i: // сброс памяти и регистров до начальных
                 sc.memoryInit();
@@ -149,13 +167,13 @@ int main()
                 regUpdate(bc, sc);
                 break;
             case f5: // установление значения аккумулятора
-                clearInput(bc, "Измените значение аккумулятора: ");
+                sc.clearString("Измените значение аккумулятора: ");
                 memUpdate(bc, sc, 100, bigArr);
                 changeValue(bc, sc, 100, bigArr);
                 memUpdate(bc, sc, activeCell, bigArr);
                 break;
             case f6: // установление значения счётчика команд
-                clearInput(bc, "Измените значение счётчика команд: ");
+                sc.clearString("Измените значение счётчика команд: ");
                 memUpdate(bc, sc, 101, bigArr);
                 changeValue(bc, sc, 101, bigArr);
                 memUpdate(bc, sc, activeCell, bigArr);
@@ -193,7 +211,7 @@ int main()
                 memUpdate(bc, sc, activeCell, bigArr);
                 break;
             case enter:
-                clearInput(bc, "Измените значение ячейки памяти: ");
+                sc.clearString("Измените значение ячейки памяти: ");
                 changeValue(bc, sc, activeCell, bigArr);
                 break;
             case q: // выход из программы
@@ -205,12 +223,22 @@ int main()
         } else {
             key = zeroKey;
             pause();
+            if (sc.CU()) {
+                regUpdate(bc, sc);
+                raise(SIGUSR1);
+                memUpdate(bc, sc, activeCell, bigArr);
+                sc.clearString("Возникла ошибка!");
+                sc.clearString("", 0);
+                sleep(2);
+            }
             sc.counterGet(&activeCell);
+            bordersUpdate(bc, sc, stInput);
             memUpdate(bc, sc, activeCell, bigArr);
-        }
-        if (key != zeroKey && key != r && key != t) { // !!!
             regUpdate(bc, sc);
-            clearInput(bc, stInput);
+        }
+        if (key != zeroKey && key != r && key != t) {
+            sc.clearString(stInput);
+            regUpdate(bc, sc);
         }
     } while (key != q);
 

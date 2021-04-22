@@ -21,18 +21,7 @@ using namespace std;
 #define POS_MAX 0x5FFF
 #define NEG_MAX 0x7FFF
 
-void clearInput(bigChars& bc, string strInput)
-{
-    int tmp = strInput.length() + 1;
-    for (int i = strInput.length() + 1; i <= termW; i++) {
-        strInput += " ";
-    }
-    bc.gotoXY(24, 1);
-    bc.writeT(strInput);
-    bc.gotoXY(24, tmp - 15);
-}
-
-void bordersUpdate(bigChars& bc, string inOut)
+void bordersUpdate(bigChars& bc, mySimpleComputer& sc, string inOut)
 {
     bc.clrscr();
     /////////////////////////////////////////////// Рамки
@@ -71,7 +60,7 @@ void bordersUpdate(bigChars& bc, string inOut)
     bc.writeT("F5 - accumulator");
     bc.gotoXY(20, 48);
     bc.writeT("F6 - instructionCounter");
-    clearInput(bc, inOut);
+    sc.clearString(inOut);
 }
 
 void regUpdate(bigChars& bc, mySimpleComputer& sc)
