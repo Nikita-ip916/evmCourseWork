@@ -125,7 +125,7 @@ int main()
                     regUpdate(bc, sc);
                     raise(SIGUSR1);
                     memUpdate(bc, sc, activeCell, bigArr);
-                    sc.clearString("Возникла ошибка!");
+                    sc.clearString("Выход из программы...");
                     sc.clearString("", 0);
                     sleep(2);
                 } else {
@@ -143,12 +143,10 @@ int main()
                     regUpdate(bc, sc);
                     raise(SIGUSR1);
                     memUpdate(bc, sc, activeCell, bigArr);
-                    sc.clearString("Возникла ошибка!");
+                    sc.clearString("Выход из программы...");
                     sc.clearString("", 0);
                     sleep(2);
                 } else {
-                    sc.regSet(T, 1);
-                    regUpdate(bc, sc);
                     sc.counterGet(&tmp);
                     tmp++;
                     if (tmp > 99)
@@ -156,6 +154,7 @@ int main()
                     sc.counterSet(tmp);
                     activeCell = tmp;
                 }
+                sc.regSet(T, 1);
                 bordersUpdate(bc, sc, stInput);
                 memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
@@ -227,7 +226,7 @@ int main()
                 regUpdate(bc, sc);
                 raise(SIGUSR1);
                 memUpdate(bc, sc, activeCell, bigArr);
-                sc.clearString("Возникла ошибка!");
+                sc.clearString("Выход из программы...");
                 sc.clearString("", 0);
                 sleep(2);
             }
