@@ -334,7 +334,7 @@ int mySimpleComputer::CU()
             setCursInv();
             mytermSave();
             return -1;
-        } else if (abs(value) >= (1 << 13)) {
+        } else if (abs(val) >= (1 << 13)) {
             regSet(M, 1);
             setCursInv();
             mytermSave();
@@ -350,8 +350,24 @@ int mySimpleComputer::CU()
         mytermSave();
     } else if (command == 11) { // WRITE ***
         gotoXY(25, posOutput);
-        int buffer = memory[operand];
-        // ? - выводить только числа или команды тоже
+        int el = memory[operand];
+        string str;
+        ostringstream s;
+        if (getFlag(el, 14)) {
+            if (getFlag(el, 13))
+                str = "-";
+            else
+                str = " ";
+            s << setfill('0') << setw(4) << hex << (el & 0x1FFF);
+
+            str += s.str();
+            writeT(str);
+            sleep(2);
+            posOutput += str.length() + 1;
+        } else {
+            regSet(E, 1);
+            return -1;
+        }
     } else if (command == 20) { // LOAD *
         if (commandDecode(memory[operand], &command, &operand)) {
             accumulator = memory[operand];
