@@ -48,11 +48,11 @@ int main()
     ////////////////////////////////////////////// Динамические подписи
     regUpdate(bc, sc);
 
-    int el; // проверка заполнением
-    for (int i = 0; i < 100; i++) {
-        el = rand() % 0x8000;
-        sc.memorySet(i, el);
-    }
+    // int el; // проверка заполнением
+    // for (int i = 0; i < 100; i++) {
+    //     el = rand() % 0x8000;
+    //     sc.memorySet(i, el);
+    // }
 
     memUpdate(bc, sc, activeCell, bigArr);
 
@@ -85,7 +85,7 @@ int main()
                 do {
                     sc.clearString(fileNameInput);
                     sc.readS(fileName);
-                    strcat(fileName, ".dat");
+                    strcat(fileName, ".o");
                     bordersUpdate(bc, sc, stInput);
                     memUpdate(bc, sc, activeCell, bigArr);
                     regUpdate(bc, sc);
@@ -106,7 +106,7 @@ int main()
                 do {
                     sc.clearString(fileNameInput);
                     sc.readS(fileName);
-                    strcat(fileName, ".dat");
+                    strcat(fileName, ".o");
                     bordersUpdate(bc, sc, stInput);
                     memUpdate(bc, sc, activeCell, bigArr);
                     regUpdate(bc, sc);

@@ -1,4 +1,4 @@
-.PHONY: all runlab clean stlib course run
+.PHONY: all runlab clean stlib course run sat sbt
 CXX = g++
 CXXFLAGS = -Wall -Werror
 CLIB = -std=c++11
@@ -7,7 +7,9 @@ MSC = -lmyscomp
 MT = -lmyterm
 BC = -lmybigchars
 RC = -lmyreadkey
-MYLIBS = $(MSC) $(MT) $(BC) $(RC) -L lib
+ASM = -lasm
+# BSC = -lbsc
+MYLIBS = $(MSC) $(MT) $(BC) $(RC) $(ASM) -L lib
 
 OUT = test.exe
 COWRK = courseWork.exe
@@ -40,7 +42,24 @@ run:
 		./bin/$(COWRK)
 
 
+sat: bin/sattest.exe
+
+bin/satest.exe: build/mainAsm.o
+		$(CXX) $< -o $@ $(MYLIBS)
+
+build/mainAsm.o: src/mainAsm.cpp $(HEADERS) src/asm.hpp $(LIBS) lib/libasm.a
+		$(CXX) $(CXXFLAGS) -I src -c $< -o $@ $(CLIB)
+
+
 stlib: $(LIBS)
+
+lib/libasm.a: src/asm.cpp
+	$(CXX) -g -I src -c -o build/asm.o $<
+	ar rcs $@ build/asm.o
+
+# lib/libasm.a: src/bsc.cpp
+# 	$(CXX) -g -I src -c -o build/bsc.o $<
+# 	ar rcs $@ build/bsc.o
 
 lib/libmyscomp.a: src/libmyscomp.cpp
 	$(CXX) -g -I src -c -o build/libmyscomp.o $<
