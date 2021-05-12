@@ -1,7 +1,6 @@
-#include "src/asm.hpp"
+#include "asm.hpp"
 
 int main(int argc, char* argv[])
 {
-    asmTranslator(argc, argv);
-    return 0;
+    return asmTranslator(argc, argv);
 }

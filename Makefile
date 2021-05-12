@@ -13,6 +13,7 @@ MYLIBS = $(MSC) $(MT) $(BC) $(RC) $(ASM) -L lib
 
 OUT = test.exe
 COWRK = courseWork.exe
+ASMOUT = sattest.exe
 
 CPP = src/libmyscomp.cpp src/libmyterm.cpp src/libmybigchars.cpp src/libmyreadkey.cpp
 HEADERS = src/libmyscomp.hpp src/libmyterm.hpp src/libmybigchars.hpp src/libmyreadkey.hpp src/interface.hpp
@@ -42,20 +43,23 @@ run:
 		./bin/$(COWRK)
 
 
-sat: bin/sattest.exe
+sat: ./bin/$(ASMOUT)
 
-bin/satest.exe: build/mainAsm.o
+./bin/$(ASMOUT): ./build/mainAsm.o ./lib/libasm.a
 		$(CXX) $< -o $@ $(MYLIBS)
 
-build/mainAsm.o: src/mainAsm.cpp $(HEADERS) src/asm.hpp $(LIBS) lib/libasm.a
+./build/mainAsm.o: ./src/mainAsm.cpp $(HEADERS) src/asm.hpp $(LIBS)
 		$(CXX) $(CXXFLAGS) -I src -c $< -o $@ $(CLIB)
+
+runsat:
+		./bin/$(ASMOUT)
 
 
 stlib: $(LIBS)
 
-lib/libasm.a: src/asm.cpp
-	$(CXX) -g -I src -c -o build/asm.o $<
-	ar rcs $@ build/asm.o
+./lib/libasm.a: src/asm.cpp
+	$(CXX) -g -I src -c $< -o build/asm.o
+	ar rvs $@ ./build/asm.o
 
 # lib/libasm.a: src/bsc.cpp
 # 	$(CXX) -g -I src -c -o build/bsc.o $<

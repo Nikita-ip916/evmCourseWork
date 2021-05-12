@@ -129,7 +129,7 @@ int main()
                     sc.clearString("", 0);
                     sleep(2);
                 } else {
-                    alarm(1);
+                    alarm(0.005);
                     // setitimer(ITIMER_REAL, &nval, &oval);
                 }
                 break;

@@ -170,7 +170,7 @@ void mySimpleComputer::signalHandler(int sigNum)
             if (CU())
                 raise(SIGUSR1);
             else
-                alarm(1);
+                alarm(0.5);
         }
         break;
     }

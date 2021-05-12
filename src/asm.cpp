@@ -1,4 +1,4 @@
-#include "src/asm.hpp"
+#include "asm.hpp"
 
 int myPow(int a, int b)
 {
@@ -27,19 +27,33 @@ int sreadInt(char* buffers, int* num, int radix)
     return 1;
 }
 
+int sc_commandEncode(int command, int operand, int* value)
+{
+    if (command >= 0 && command < (1 << 7) && operand >= 0
+        && operand < (1 << 7)) {
+        *value = 0;
+        *value |= operand;
+        command <<= 7;
+        *value |= command;
+    } else {
+        return -1;
+    }
+    return 0;
+}
+
 int asmTranslator(int argc, char** argv)
 {
     if (checkArgv(argv) == 1)
         return 1;
     int inputAsm = 0, outputBin = 0, counterTokens = 0, flagign = 0, i = 0;
     int address = 0, value = 0, ret = 0;
-    char buffer[256] = {0};
-    int ram[sizeRAM] = {0};
-    if ((inputAsm = open(argv[2], O_RDONLY)) == -1)
+    char buffer[512] = {0};
+    int ram[n];
+    if ((inputAsm = open(argv[1], O_RDONLY)) == -1)
         return 1;
-    if ((outputBin = open(argv[1], O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1)
+    if ((outputBin = open(argv[2], O_WRONLY | O_CREAT | O_TRUNC, 0666)) == -1)
         return 1;
-    for (i = 0; i < sizeRAM; i++)
+    for (i = 0; i < n; i++)
         ram[i] = 0;
     i = 0;
     do {
@@ -88,6 +102,7 @@ int asmTranslator(int argc, char** argv)
                 }
                 counterTokens = 0;
                 i = 0;
+                continue;
             }
             i++;
         }
@@ -104,7 +119,7 @@ int checkArgv(char* argv[])
     char* ptr2 = NULL;
     ptr1 = strrchr(argv[1], '.');
     ptr2 = strrchr(argv[2], '.');
-    if ((!(strcmp(ptr1, ".o") == 0)) || (!(strcmp(ptr2, ".sa") == 0))) {
+    if ((!(strcmp(ptr1, ".sa") == 0)) || (!(strcmp(ptr2, ".o") == 0))) {
         return 1;
     } else {
         return 0;
@@ -115,31 +130,31 @@ int asmCommand(char* str)
 {
     int ret = 0;
     if (strcmp(str, "READ") == 0) {
-        ret = 0x10;
+        ret = 10;
     } else if (strcmp(str, "WRITE") == 0) {
-        ret = 0x11;
+        ret = 11;
     } else if (strcmp(str, "LOAD") == 0) {
-        ret = 0x20;
+        ret = 20;
     } else if (strcmp(str, "STORE") == 0) {
-        ret = 0x21;
+        ret = 21;
     } else if (strcmp(str, "ADD") == 0) {
-        ret = 0x30;
+        ret = 30;
     } else if (strcmp(str, "SUB") == 0) {
-        ret = 0x31;
+        ret = 31;
     } else if (strcmp(str, "DIVIDE") == 0) {
-        ret = 0x32;
+        ret = 32;
     } else if (strcmp(str, "MUL") == 0) {
-        ret = 0x33;
+        ret = 33;
     } else if (strcmp(str, "JUMP") == 0) {
-        ret = 0x40;
+        ret = 40;
     } else if (strcmp(str, "JNEG") == 0) {
-        ret = 0x41;
+        ret = 41;
     } else if (strcmp(str, "JZ") == 0) {
-        ret = 0x42;
+        ret = 42;
     } else if (strcmp(str, "HALT") == 0) {
-        ret = 0x43;
-    } else if (strcmp(str, "SUBCT") == 0) { /* !!! */
-        ret = 0x76;
+        ret = 43;
+    } else if (strcmp(str, "SUBCT") == 0) {
+        ret = 76;
     } else {
         ret = -1;
     }
@@ -205,7 +220,7 @@ int parsingLine(char* str, int* address, int* value)
             sreadInt(tmpPtr, &operand, 16);
             tmpPtr[2] = tmp;
             sc_commandEncode(command, operand, value);
-            *value &= 0x7FFF;
+            //*value &= 0x7FFF;
         } else {
             sreadInt(tmpPtr, value, 16);
             *value |= (1 << 14);
