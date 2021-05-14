@@ -27,6 +27,7 @@ int main()
     char fileName[256] = "";
     string stInput = "Введите команду: ";
     string fileNameInput = "Введите имя файла: ";
+    int tmp;
 
     sc.memoryInit();
     sc.regInit();
@@ -48,12 +49,6 @@ int main()
     ////////////////////////////////////////////// Динамические подписи
     regUpdate(bc, sc);
 
-    // int el; // проверка заполнением
-    // for (int i = 0; i < 100; i++) {
-    //     el = rand() % 0x8000;
-    //     sc.memorySet(i, el);
-    // }
-
     memUpdate(bc, sc, activeCell, bigArr);
 
     sc.clearString(stInput);
@@ -63,11 +58,6 @@ int main()
 
     signal(SIGALRM, sc.signalHandler);
     signal(SIGUSR1, sc.signalHandler);
-    // struct itimerval nval, oval;
-    // nval.it_interval.tv_sec = 3;
-    // nval.it_interval.tv_usec = 500;
-    // nval.it_value.tv_sec = 1;
-    // nval.it_value.tv_usec = 0;
 
     keys key;
     do {
@@ -126,17 +116,22 @@ int main()
                     raise(SIGUSR1);
                     memUpdate(bc, sc, activeCell, bigArr);
                     sc.clearString("Выход из программы...");
-                    sc.clearString("", 0);
-                    sleep(2);
+                    // sc.clearString("", 0);
+                    sleep(1);
                 } else {
-                    alarm(0.005);
-                    // setitimer(ITIMER_REAL, &nval, &oval);
+                    // alarm(1);
+                    // setitimer(ITIMER_REAL, &sc.nval, &sc.oval);
+                    sc.counterGet(&tmp);
+                    tmp++;
+                    if (tmp > 99)
+                        tmp = 0;
+                    sc.counterSet(tmp);
+                    activeCell = tmp;
                 }
                 break;
             case t: // выполнить только текущую команду ---
                 sc.clearString("Input: ");
                 sc.clearString("Output: ", 0);
-                int tmp;
                 sc.regSet(T, 0);
                 regUpdate(bc, sc);
                 if (sc.CU()) {
@@ -144,8 +139,8 @@ int main()
                     raise(SIGUSR1);
                     memUpdate(bc, sc, activeCell, bigArr);
                     sc.clearString("Выход из программы...");
-                    sc.clearString("", 0);
-                    sleep(2);
+                    // sc.clearString("", 0);
+                    sleep(1);
                 } else {
                     sc.counterGet(&tmp);
                     tmp++;
@@ -221,17 +216,22 @@ int main()
             memUpdate(bc, sc, activeCell, bigArr);
         } else {
             key = zeroKey;
-            pause();
+            // pause();
+            sc.counterGet(&tmp);
+            tmp++;
+            if (tmp > 99)
+                tmp = 0;
+            sc.counterSet(tmp);
             if (sc.CU()) {
                 regUpdate(bc, sc);
                 raise(SIGUSR1);
                 memUpdate(bc, sc, activeCell, bigArr);
                 sc.clearString("Выход из программы...");
-                sc.clearString("", 0);
-                sleep(2);
+                // sc.clearString("", 0);
+                sleep(1);
             }
             sc.counterGet(&activeCell);
-            bordersUpdate(bc, sc, stInput);
+            // bordersUpdate(bc, sc, stInput);
             memUpdate(bc, sc, activeCell, bigArr);
             regUpdate(bc, sc);
         }

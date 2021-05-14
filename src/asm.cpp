@@ -15,9 +15,9 @@ int myPow(int a, int b)
 int sreadInt(char* buffers, int* num, int radix)
 {
     int size = strlen(buffers) - 1;
-    int i = size, k = 0;
+    int k = 0;
     *num = 0;
-    for (i = size; i >= 0; i--)
+    for (int i = size; i >= 0; i--)
         if ((buffers[i] >= '0') & (buffers[i] <= '9'))
             *num += myPow(radix, k++) * (buffers[i] - '0');
         else if ((buffers[i] >= 'A') & (buffers[i] <= 'F'))
@@ -101,8 +101,7 @@ int asmTranslator(int argc, char** argv)
                     ram[address] = value;
                 }
                 counterTokens = 0;
-                i = 0;
-                continue;
+                i = -1;
             }
             i++;
         }

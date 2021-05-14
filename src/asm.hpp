@@ -1,5 +1,5 @@
-#ifndef ASM_H
-#define ASM_H
+#ifndef ASM_HPP
+#define ASM_HPP
 
 #include "libmyscomp.hpp"
 

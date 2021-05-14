@@ -25,7 +25,7 @@ using namespace std;
 
 #define CUcommand(command)                                                \
     ((command >= 10 && command <= 11) || (command >= 20 && command <= 21) \
-     || (command >= 40 && command <= 43))
+     || (command >= 40 && command <= 43) || (command == 55))
 
 const int n = 100;
 
@@ -38,6 +38,8 @@ class mySimpleComputer : public readKey {
     static int posOutput;
 
 public:
+    static struct itimerval nval;
+    static struct itimerval oval;
     static int memoryInit();
 
     static int memorySet(int address, int value);

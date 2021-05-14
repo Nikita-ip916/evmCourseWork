@@ -6,12 +6,22 @@ char mySimpleComputer::instructionCounter;
 short int mySimpleComputer::accumulator;
 int mySimpleComputer::posInput;
 int mySimpleComputer::posOutput;
+struct itimerval mySimpleComputer::nval;
+struct itimerval mySimpleComputer::oval;
 
 int mySimpleComputer::memoryInit()
 {
     for (int i = 0; i < n; i++)
         memory[i] = 0;
     accumulator = 0x4000;
+    nval.it_interval.tv_sec = 0;
+    nval.it_interval.tv_usec = 500;
+    nval.it_value.tv_sec = 0;
+    nval.it_value.tv_usec = 500;
+    oval.it_interval.tv_sec = 0;
+    oval.it_interval.tv_usec = 0;
+    oval.it_value.tv_sec = 0;
+    oval.it_value.tv_usec = 0;
     return 0;
 }
 
@@ -154,7 +164,13 @@ void mySimpleComputer::signalHandler(int sigNum)
 {
     switch (sigNum) {
     case SIGUSR1:
-        alarm(0);
+        // alarm(0);
+        // struct itimerval zval;
+        // zval.it_interval.tv_sec = 0;
+        // zval.it_interval.tv_usec = 0;
+        // zval.it_value.tv_sec = 0;
+        // zval.it_value.tv_usec = 0;
+        // setitimer(ITIMER_REAL, &zval, &oval);
         regInit();
         regSet(T, 1);
         break;
@@ -169,8 +185,10 @@ void mySimpleComputer::signalHandler(int sigNum)
             counterSet(instructionCounter);
             if (CU())
                 raise(SIGUSR1);
-            else
-                alarm(0.5);
+            else {
+                // alarm(1);
+                // setitimer(ITIMER_REAL, &nval, &oval);
+            }
         }
         break;
     }
@@ -198,7 +216,7 @@ void mySimpleComputer::clearString(string str, bool isInput)
 int mySimpleComputer::ALU(int command, int operand)
 {
     if (command == 30) { // ADD **
-        if (!(((accumulator << 13) & 1) ^ ((memory[operand] << 13) & 1))) {
+        if (!(((accumulator >> 13) & 1) ^ ((memory[operand] >> 13) & 1))) {
             if ((accumulator & ((1 << 13) - 1))
                         + (memory[operand] & ((1 << 13) - 1))
                 < (1 << 13)) {
@@ -216,7 +234,7 @@ int mySimpleComputer::ALU(int command, int operand)
             }
         }
     } else if (command == 31) { // SUB ***
-        if (!(((accumulator << 13) & 1) ^ ((memory[operand] << 13) & 1))) {
+        if (!(((accumulator >> 13) & 1) ^ ((memory[operand] >> 13) & 1))) {
             if ((accumulator & ((1 << 13) - 1))
                 >= (memory[operand] & ((1 << 13) - 1))) {
                 accumulator -= (memory[operand] & ((1 << 13) - 1));
@@ -237,8 +255,8 @@ int mySimpleComputer::ALU(int command, int operand)
         if ((memory[operand] & ((1 << 13) - 1) == 0)) {
             regSet(O, 1);
             return -1;
-        } else if (!(((accumulator << 13) & 1)
-                     ^ ((memory[operand] << 13) & 1))) {
+        } else if (!(((accumulator >> 13) & 1)
+                     ^ ((memory[operand] >> 13) & 1))) {
             accumulator = (1 << 14)
                     + (accumulator & ((1 << 13) - 1))
                             / (memory[operand] & ((1 << 13) - 1));
@@ -248,7 +266,7 @@ int mySimpleComputer::ALU(int command, int operand)
                             / (memory[operand] & ((1 << 13) - 1));
         }
     } else if (command == 33) { // MUL ***
-        if (!(((accumulator << 13) & 1) ^ ((memory[operand] << 13) & 1))) {
+        if (!(((accumulator >> 13) & 1) ^ ((memory[operand] >> 13) & 1))) {
             if ((accumulator & ((1 << 13) - 1))
                         * (memory[operand] & ((1 << 13) - 1))
                 < (1 << 13)) {
@@ -277,7 +295,7 @@ int mySimpleComputer::ALU(int command, int operand)
             regSet(E, 1);
             return -1;
         }
-        if (!(((memory[operand] << 13) & 1) ^ ((memory[cell] << 13) & 1))) {
+        if (!(((memory[operand] >> 13) & 1) ^ ((memory[cell] >> 13) & 1))) {
             if ((memory[operand] & ((1 << 13) - 1))
                 >= (memory[cell] & ((1 << 13) - 1))) {
                 accumulator
@@ -380,7 +398,7 @@ int mySimpleComputer::CU()
     } else if (command == 40) { // JUMP *
         instructionCounter = operand - 1;
     } else if (command == 41) { // JNEG *
-        if ((accumulator << 13) & 1) {
+        if ((accumulator >> 13) & 1) {
             instructionCounter = operand - 1;
         }
     } else if (command == 42) { // JZ *
@@ -389,6 +407,10 @@ int mySimpleComputer::CU()
         }
     } else if (command == 43) { // HALT *
         return -1;
+    } else if (command == 55) { // JNS
+        if ((accumulator >> 13) | 0) {
+            instructionCounter = operand - 1;
+        }
     } else { // Invalid command
         regSet(E, 1);
         return -1;

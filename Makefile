@@ -1,4 +1,4 @@
-.PHONY: all runlab clean stlib course run sat sbt
+.PHONY: all runlab clean stlib course run sat sbt runsat runsbt
 CXX = g++
 CXXFLAGS = -Wall -Werror
 CLIB = -std=c++11
@@ -8,12 +8,13 @@ MT = -lmyterm
 BC = -lmybigchars
 RC = -lmyreadkey
 ASM = -lasm
-# BSC = -lbsc
-MYLIBS = $(MSC) $(MT) $(BC) $(RC) $(ASM) -L lib
+BSC = -lbsc
+MYLIBS = $(MSC) $(MT) $(BC) $(RC) $(ASM) $(BSC) -L lib
 
 OUT = test.exe
 COWRK = courseWork.exe
 ASMOUT = sattest.exe
+BSCOUT = sbttest.exe
 
 CPP = src/libmyscomp.cpp src/libmyterm.cpp src/libmybigchars.cpp src/libmyreadkey.cpp
 HEADERS = src/libmyscomp.hpp src/libmyterm.hpp src/libmybigchars.hpp src/libmyreadkey.hpp src/interface.hpp
@@ -55,11 +56,26 @@ runsat:
 		./bin/$(ASMOUT)
 
 
+sbt: ./bin/$(BSCOUT)
+
+./bin/$(BSCOUT): ./build/mainBsc.o ./lib/libasm.a ./lib/libbsc.a
+		$(CXX) $< -o $@ $(MYLIBS)
+
+./build/mainBsc.o: ./src/mainBsc.cpp $(HEADERS) src/bsc.hpp $(LIBS)
+		$(CXX) $(CXXFLAGS) -I src -c $< -o $@ $(CLIB)
+
+runsbt:
+		./bin/$(BSCOUT)
+
+
 stlib: $(LIBS)
 
 ./lib/libasm.a: src/asm.cpp
 	$(CXX) -g -I src -c $< -o build/asm.o
 	ar rvs $@ ./build/asm.o
+./lib/libbsc.a: src/bsc.cpp
+	$(CXX) -g -I src -c $< -o build/bsc.o
+	ar rvs $@ ./build/bsc.o
 
 # lib/libasm.a: src/bsc.cpp
 # 	$(CXX) -g -I src -c -o build/bsc.o $<
