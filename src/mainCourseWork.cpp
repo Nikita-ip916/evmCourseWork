@@ -106,7 +106,7 @@ int main()
                 fileName[256] = {0};
                 sc.mytermSave();
                 break;
-            case r: // запустить программу на выполнение ---
+            case r: // запустить программу на выполнение
                 sc.clearString("Input: ");
                 sc.clearString("Output: ", 0);
                 sc.regSet(T, 0);
@@ -120,16 +120,10 @@ int main()
                     sleep(1);
                 } else {
                     // alarm(1);
-                    // setitimer(ITIMER_REAL, &sc.nval, &sc.oval);
-                    sc.counterGet(&tmp);
-                    tmp++;
-                    if (tmp > 99)
-                        tmp = 0;
-                    sc.counterSet(tmp);
-                    activeCell = tmp;
+                    setitimer(ITIMER_REAL, &sc.nval, &sc.oval);
                 }
                 break;
-            case t: // выполнить только текущую команду ---
+            case t: // выполнить только текущую команду
                 sc.clearString("Input: ");
                 sc.clearString("Output: ", 0);
                 sc.regSet(T, 0);
@@ -150,7 +144,7 @@ int main()
                     activeCell = tmp;
                 }
                 sc.regSet(T, 1);
-                bordersUpdate(bc, sc, stInput);
+                // bordersUpdate(bc, sc, stInput);
                 memUpdate(bc, sc, activeCell, bigArr);
                 regUpdate(bc, sc);
                 break;
@@ -213,15 +207,11 @@ int main()
             }
         } else if (key == i) {
             raise(SIGUSR1);
+            regUpdate(bc, sc);
             memUpdate(bc, sc, activeCell, bigArr);
         } else {
             key = zeroKey;
-            // pause();
-            sc.counterGet(&tmp);
-            tmp++;
-            if (tmp > 99)
-                tmp = 0;
-            sc.counterSet(tmp);
+            pause();
             if (sc.CU()) {
                 regUpdate(bc, sc);
                 raise(SIGUSR1);

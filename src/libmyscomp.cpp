@@ -15,9 +15,9 @@ int mySimpleComputer::memoryInit()
         memory[i] = 0;
     accumulator = 0x4000;
     nval.it_interval.tv_sec = 0;
-    nval.it_interval.tv_usec = 500;
+    nval.it_interval.tv_usec = 50000;
     nval.it_value.tv_sec = 0;
-    nval.it_value.tv_usec = 500;
+    nval.it_value.tv_usec = 50000;
     oval.it_interval.tv_sec = 0;
     oval.it_interval.tv_usec = 0;
     oval.it_value.tv_sec = 0;
@@ -165,12 +165,12 @@ void mySimpleComputer::signalHandler(int sigNum)
     switch (sigNum) {
     case SIGUSR1:
         // alarm(0);
-        // struct itimerval zval;
-        // zval.it_interval.tv_sec = 0;
-        // zval.it_interval.tv_usec = 0;
-        // zval.it_value.tv_sec = 0;
-        // zval.it_value.tv_usec = 0;
-        // setitimer(ITIMER_REAL, &zval, &oval);
+        struct itimerval zval;
+        zval.it_interval.tv_sec = 0;
+        zval.it_interval.tv_usec = 0;
+        zval.it_value.tv_sec = 0;
+        zval.it_value.tv_usec = 0;
+        setitimer(ITIMER_REAL, &zval, &oval);
         regInit();
         regSet(T, 1);
         break;
@@ -183,12 +183,6 @@ void mySimpleComputer::signalHandler(int sigNum)
             if (instructionCounter > 99)
                 instructionCounter = 0;
             counterSet(instructionCounter);
-            if (CU())
-                raise(SIGUSR1);
-            else {
-                // alarm(1);
-                // setitimer(ITIMER_REAL, &nval, &oval);
-            }
         }
         break;
     }
@@ -215,7 +209,7 @@ void mySimpleComputer::clearString(string str, bool isInput)
 
 int mySimpleComputer::ALU(int command, int operand)
 {
-    if (command == 30) { // ADD **
+    if (command == 30) { // ADD
         if (!(((accumulator >> 13) & 1) ^ ((memory[operand] >> 13) & 1))) {
             if ((accumulator & ((1 << 13) - 1))
                         + (memory[operand] & ((1 << 13) - 1))
@@ -233,7 +227,7 @@ int mySimpleComputer::ALU(int command, int operand)
                 accumulator = memory[operand] - (accumulator & ((1 << 13) - 1));
             }
         }
-    } else if (command == 31) { // SUB ***
+    } else if (command == 31) { // SUB
         if (!(((accumulator >> 13) & 1) ^ ((memory[operand] >> 13) & 1))) {
             if ((accumulator & ((1 << 13) - 1))
                 >= (memory[operand] & ((1 << 13) - 1))) {
@@ -251,7 +245,7 @@ int mySimpleComputer::ALU(int command, int operand)
                 return -1;
             }
         }
-    } else if (command == 32) { // DIVIDE ***
+    } else if (command == 32) { // DIVIDE
         if ((memory[operand] & ((1 << 13) - 1) == 0)) {
             regSet(O, 1);
             return -1;
@@ -265,7 +259,7 @@ int mySimpleComputer::ALU(int command, int operand)
                     + (accumulator & ((1 << 13) - 1))
                             / (memory[operand] & ((1 << 13) - 1));
         }
-    } else if (command == 33) { // MUL ***
+    } else if (command == 33) { // MUL
         if (!(((accumulator >> 13) & 1) ^ ((memory[operand] >> 13) & 1))) {
             if ((accumulator & ((1 << 13) - 1))
                         * (memory[operand] & ((1 << 13) - 1))
@@ -289,7 +283,7 @@ int mySimpleComputer::ALU(int command, int operand)
                 return -1;
             }
         }
-    } else if (command == 76) { // SUBC ***
+    } else if (command == 76) { // SUBC
         int cell = accumulator & ((1 << 14) - 1);
         if (cell < 0 || cell > 99) {
             regSet(E, 1);
@@ -337,7 +331,7 @@ int mySimpleComputer::CU()
             regSet(E, 1);
             return -1;
         }
-    } else if (command == 10) { // READ **
+    } else if (command == 10) { // READ
         mytermRestore();
         setCursVis();
         char buffer[256] = "";
@@ -366,7 +360,7 @@ int mySimpleComputer::CU()
         }
         setCursInv();
         mytermSave();
-    } else if (command == 11) { // WRITE ***
+    } else if (command == 11) { // WRITE
         gotoXY(25, posOutput);
         int el = memory[operand];
         string str;
@@ -386,26 +380,26 @@ int mySimpleComputer::CU()
             regSet(E, 1);
             return -1;
         }
-    } else if (command == 20) { // LOAD *
+    } else if (command == 20) { // LOAD
         if (commandDecode(memory[operand], &command, &operand)) {
             accumulator = memory[operand];
         } else {
             regSet(E, 1);
             return -1;
         }
-    } else if (command == 21) { // STORE *
+    } else if (command == 21) { // STORE
         memory[operand] = accumulator;
-    } else if (command == 40) { // JUMP *
+    } else if (command == 40) { // JUMP
         instructionCounter = operand - 1;
-    } else if (command == 41) { // JNEG *
+    } else if (command == 41) { // JNEG
         if ((accumulator >> 13) & 1) {
             instructionCounter = operand - 1;
         }
-    } else if (command == 42) { // JZ *
+    } else if (command == 42) { // JZ
         if ((accumulator & ((1 << 13) - 1)) == 0) {
             instructionCounter = operand - 1;
         }
-    } else if (command == 43) { // HALT *
+    } else if (command == 43) { // HALT
         return -1;
     } else if (command == 55) { // JNS
         if ((accumulator >> 13) | 0) {

@@ -206,6 +206,19 @@ void accumulatorUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell)
     bc.setfgcolor();
 }
 
+void operUpdate(mySimpleComputer& sc, int command = -1, int operand = -1)
+{
+    sc.gotoXY(8, 70);
+    if (command == -1) {
+        sc.writeT("       ");
+    } else {
+        ostringstream s;
+        s << setfill('0') << setw(2) << command << " : " << setfill('0')
+          << setw(2) << operand;
+        sc.writeT(s.str());
+    }
+}
+
 void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
 {
     int el, isData;
@@ -234,10 +247,13 @@ void memUpdate(bigChars& bc, mySimpleComputer& sc, int activeCell, int* bigArr)
         }
         value += s.str();
         if (i == activeCell) {
-            if (!isData)
+            if (!isData) {
                 bigCharUpdate(command, operand, bc, bigArr);
-            else
+                operUpdate(sc, command, operand);
+            } else {
                 bigCharUpdate(el, bc, bigArr);
+                operUpdate(sc);
+            }
             bc.gotoXY(y, x);
             bc.setbgcolor(cl_gray);
             bc.setfgcolor(cl_black);
