@@ -406,7 +406,6 @@ int mySimpleComputer::CU()
             instructionCounter = operand - 1;
         }
     } else { // Invalid command
-        regSet(E, 1);
         return -1;
     }
     return 0;
