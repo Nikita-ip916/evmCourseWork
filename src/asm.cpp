@@ -219,7 +219,6 @@ int parsingLine(char* str, int* address, int* value)
             sreadInt(tmpPtr, &operand, 16);
             tmpPtr[2] = tmp;
             sc_commandEncode(command, operand, value);
-            //*value &= 0x7FFF;
         } else {
             sreadInt(tmpPtr, value, 16);
             *value |= (1 << 14);

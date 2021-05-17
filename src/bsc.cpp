@@ -1,14 +1,15 @@
 #include "bsc.hpp"
 
 static var alfabet[26];
-static memMap map[512];
-static int indexmap = 0;
-static int bgn = 0;
-static int endd = 99;
-static int tmp = -1;
-static int tmp1 = 0;
-static int flagrepeatjump = 0;
-static int flagend = 0;
+static memMap map[256];
+static memMap jumpforward[256];
+static int indexmap;
+static int indexjump;
+static int bgn;
+static int endd;
+static int tmp;
+static int tmp1;
+static int flagend;
 static char readc[12] = "   READ   \n";
 static char writec[13] = "   WRITE   \n";
 static char jmpc[12] = "   JUMP   \n";
@@ -23,53 +24,12 @@ static char divide[14] = "   DIVIDE   \n";
 static char sub[11] = "   SUB   \n";
 static char jz[10] = "   JZ   \n";
 
-struct tLEC* hd;
-struct tLEC* head;
-
-int writeInt(int std, int num, int radix, int znac)
-{
-    int i = 0, counter = 512;
-    char sign = '-';
-    char buffer[512] = {0};
-    if (num == 0) {
-        if (znac == -1)
-            write(std, "0", 1);
-        for (i = 0; i < znac; i++)
-            write(std, "0", 1);
-        return i;
-    }
-    if (radix == 10) {
-        if (num < 0) {
-            write(std, &sign, 1);
-            num = -num;
-        }
-    }
-    while (num) {
-        if (num % radix > 9) {
-            buffer[--counter] = 'A' + num % radix - 10;
-            num /= radix;
-        } else {
-            buffer[--counter] = '0' + (num % radix);
-            num /= radix;
-        }
-    }
-    if (znac > -1) {
-        if ((512 - counter) < znac) {
-            znac = znac - 512 + counter;
-            while (znac) {
-                write(std, "0", 1);
-                znac--;
-            }
-        }
-    }
-    write(std, &buffer[counter], 512 - counter);
-    return counter;
-}
+struct tOP* head;
 
 int swriteInt(char* buff, int num, int radix, int znac)
 {
-    char sign = '-', buffer[512] = {0};
-    int i = 0, j = 0, k = 0, counter = 512;
+    char sign = '-', buffer[256] = {0};
+    int i = 0, j = 0, k = 0, counter = 256;
     if (num == 0) {
         if (znac == -1)
             buff[i] = '0';
@@ -93,8 +53,8 @@ int swriteInt(char* buff, int num, int radix, int znac)
         }
     }
     if (znac > -1) {
-        if ((512 - counter) < znac) {
-            znac = znac - 512 + counter;
+        if ((256 - counter) < znac) {
+            znac = znac - 256 + counter;
             while (znac) {
                 buff[i] = '0';
                 i++;
@@ -103,15 +63,12 @@ int swriteInt(char* buff, int num, int radix, int znac)
             }
         }
     }
-
-    while (i < 512 - counter + j) {
+    while (i < 256 - counter + j) {
         buff[i] = buffer[counter + k++];
         i++;
     }
-
     return counter;
 }
-
 int prior(char c)
 {
     switch (c) {
@@ -131,8 +88,8 @@ void convert(char* str, char* out)
 {
     int was_op = 0, np = 0;
     int j = 0;
-    struct tLEC* p;
-    head = (tLEC*)malloc(sizeof(struct tLEC));
+    struct tOP* p;
+    head = (tOP*)malloc(sizeof(struct tOP));
     head->next = NULL;
     for (int i = 0; i < strlen(str); i++) {
         if (((str[i] >= 'A') && (str[i] <= 'Z'))
@@ -144,7 +101,7 @@ void convert(char* str, char* out)
         }
         switch (str[i]) {
         case '(': {
-            p = (tLEC*)malloc(sizeof(struct tLEC));
+            p = (tOP*)malloc(sizeof(struct tOP));
             p->dt = str[i];
             p->next = head;
             head = p;
@@ -168,7 +125,7 @@ void convert(char* str, char* out)
                         break;
                 }
                 head = p;
-                p = (tLEC*)calloc(1, sizeof(struct tLEC));
+                p = (tOP*)calloc(1, sizeof(struct tOP));
                 p->dt = str[i];
                 p->next = head;
                 head = p;
@@ -228,7 +185,7 @@ int keywordCode(char* str)
 int basicTranslator(int argc, char* argv[])
 {
     int input = 0, output = 0, readcount;
-    char buffer[512] = {0};
+    char buffer[256] = {0};
     int i = 0;
     char* ptr = NULL;
     int ret = 0;
@@ -237,8 +194,8 @@ int basicTranslator(int argc, char* argv[])
     bgn = 0;
     endd = 99;
     indexmap = 0;
+    indexjump = 0;
     flagend = 0;
-    flagrepeatjump = 0;
 
     if ((input = open(argv[1], O_RDONLY)) == -1)
         return 1;
@@ -249,9 +206,11 @@ int basicTranslator(int argc, char* argv[])
         alfabet[i].name[0] = 'A' + i;
         alfabet[i].name[1] = '\0';
     }
-    for (i = 0; i < 512; i++) {
+    for (i = 0; i < 256; i++) {
         map[i].real = -1;
         map[i].expect = -1;
+        jumpforward[i].real = -1;
+        jumpforward[i].expect = -1;
     }
     i = 0;
     do {
@@ -273,6 +232,29 @@ int basicTranslator(int argc, char* argv[])
                 break;
             if (ret == 2)
                 return 1;
+            if (flagend) {
+                for (int k = 0; k < indexjump; k++) {
+                    jmpc[0] = map[jumpforward[k].expect].real / 10 + '0';
+                    jmpc[1] = map[jumpforward[k].expect].real % 10 + '0';
+                    int cell = jumpforward[k].real;
+                    int kk;
+                    for (kk = 0; kk < indexmap; kk++) {
+                        if ((cell == map[kk].expect)) {
+                            if (map[kk].real == -1) {
+                                return 2;
+                            }
+                            cell = map[kk].real;
+                            jmpc[8] = (cell) / 10 + '0';
+                            jmpc[9] = (cell) % 10 + '0';
+                            write(output, jmpc, sizeof(char) * strlen(jmpc));
+                            break;
+                        }
+                    }
+                    if (kk == indexmap) {
+                        return 1;
+                    }
+                }
+            }
             i = -1;
         }
         i++;
@@ -288,7 +270,7 @@ int basicTranslator(int argc, char* argv[])
 
 int parsingLineB(char* str, int output)
 {
-    char tmpPtr1[512];
+    char tmpPtr1[256];
     char* ptr = str;
     char* tmpPtr = ptr;
     char* op = NULL;
@@ -496,8 +478,8 @@ int parsingLineB(char* str, int output)
         if (flagJump == 1) {
             flagJump = 0;
             int ret = ifoperation(output, op, 0, 0);
-            if (ret == -1) {
-                return -1;
+            if (ret == 1) {
+                return 1;
             }
         }
         jmpc[0] = bgn / 10 + '0';
@@ -514,15 +496,18 @@ int parsingLineB(char* str, int output)
                 cell = map[i].real;
                 jmpc[8] = (cell) / 10 + '0';
                 jmpc[9] = (cell) % 10 + '0';
+                write(output, jmpc, sizeof(char) * strlen(jmpc));
                 break;
             }
         }
         if (i == indexmap) {
-            jmpc[8] = (cell) / 10 + '0';
-            jmpc[9] = (cell) % 10 + '0';
+            // jmpc[8] = (cell) / 10 + '0';
+            // jmpc[9] = (cell) % 10 + '0';
+            jumpforward[indexjump].real = cell;
+            jumpforward[indexjump].expect = indexmap - 1;
+            indexjump++;
         }
         bgn++;
-        write(output, jmpc, sizeof(char) * strlen(jmpc));
     }
     if (ret == KEYW_REM) {
         map[indexmap].real = -1;
@@ -533,8 +518,8 @@ int parsingLineB(char* str, int output)
         if (flagJump == 1) {
             flagJump = 0;
             int ret = ifoperation(output, op, 0, 0);
-            if (ret == -1) {
-                return -1;
+            if (ret == 1) {
+                return 1;
             }
         }
         for (i = 0; i < 26; i++) {
@@ -561,8 +546,8 @@ int parsingLineB(char* str, int output)
         if (flagJump == 1) {
             flagJump = 0;
             int ret = ifoperation(output, op, 0, 0);
-            if (ret == -1) {
-                return -1;
+            if (ret == 1) {
+                return 1;
             }
         }
         for (i = 0; i < 26; i++) {
@@ -595,8 +580,8 @@ int parsingLineB(char* str, int output)
         if (flagJump == 1) {
             flagJump = 0;
             int ret = ifoperation(output, op, 1, sk);
-            if (ret == -1)
-                return -1;
+            if (ret == 1)
+                return 1;
         }
         j = 0;
         while (1) {
@@ -1053,8 +1038,8 @@ int parsingLineB(char* str, int output)
         if (flagJump == 1) {
             flagJump = 0;
             int ret = ifoperation(output, op, 0, 0);
-            if (ret == -1) {
-                return -1;
+            if (ret == 1) {
+                return 1;
             }
         }
         map[indexmap].real = bgn;

@@ -15,13 +15,8 @@ enum keywords {
     KEYW_E = -1
 };
 
-struct tLE {
-    struct tLE* next;
-    int data;
-};
-
-struct tLEC {
-    struct tLEC* next;
+struct tOP {
+    struct tOP* next;
     char dt;
 };
 
@@ -36,7 +31,6 @@ typedef struct memoryMap {
     int expect;
 } memMap;
 
-int writeInt(int std, int num, int radix, int znac);
 int swriteInt(char* buff, int num, int radix, int znac);
 int keywordCode(char* str);
 int parsingLineB(char* str, int output);
