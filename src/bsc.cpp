@@ -89,6 +89,7 @@ void convert(char* str, char* out)
     int was_op = 0, np = 0;
     int j = 0;
     struct tOP* p;
+    struct tOP* q;
     head = (tOP*)malloc(sizeof(struct tOP));
     head->next = NULL;
     for (int i = 0; i < strlen(str); i++) {
@@ -120,7 +121,9 @@ void convert(char* str, char* out)
                     if (prior(str[i]) <= prior(p->dt)) {
                         out[j] = p->dt;
                         j++;
+                        q = p;
                         p = p->next;
+                        free(q);
                     } else
                         break;
                 }
@@ -138,9 +141,13 @@ void convert(char* str, char* out)
                 while (p->dt != '(' && np > 0) {
                     out[j] = p->dt;
                     j++;
+                    q = p;
                     p = p->next;
+                    free(q);
                 }
+                q = p;
                 p = p->next;
+                free(q);
             }
             head = p;
             np--;
@@ -501,8 +508,6 @@ int parsingLineB(char* str, int output)
             }
         }
         if (i == indexmap) {
-            // jmpc[8] = (cell) / 10 + '0';
-            // jmpc[9] = (cell) % 10 + '0';
             jumpforward[indexjump].real = cell;
             jumpforward[indexjump].expect = indexmap - 1;
             indexjump++;
@@ -668,7 +673,7 @@ int parsingLineB(char* str, int output)
             return 0;
         }
         while (sk != 0) {
-            // printf("\n$ %s $\n\n", tmpPtr1);
+            // printf("\n$ %s $\n", tmpPtr1);
             int kk = 0;
             for (i = 0; i < len; i++) {
                 if (tmpPtr1[i] == '+' || tmpPtr1[i] == '-' || tmpPtr1[i] == '*'
@@ -754,6 +759,7 @@ int parsingLineB(char* str, int output)
                             tmpPtr1[kk] = tmpPtr1[kk + 1];
                         }
                         tmpPtr1[kk] = '\0';
+                        j--;
                     }
                 }
                 sk--;
@@ -838,6 +844,7 @@ int parsingLineB(char* str, int output)
                             tmpPtr1[kk] = tmpPtr1[kk + 1];
                         }
                         tmpPtr1[kk] = '\0';
+                        j--;
                     }
                 }
                 sk--;
@@ -923,6 +930,7 @@ int parsingLineB(char* str, int output)
                             tmpPtr1[kk] = tmpPtr1[kk + 1];
                         }
                         tmpPtr1[kk] = '\0';
+                        j--;
                     }
                 }
                 sk--;
@@ -1018,6 +1026,7 @@ int parsingLineB(char* str, int output)
                             tmpPtr1[kk] = tmpPtr1[kk + 1];
                         }
                         tmpPtr1[kk] = '\0';
+                        j--;
                     }
                 }
                 sk--;

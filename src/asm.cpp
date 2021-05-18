@@ -152,6 +152,8 @@ int asmCommand(char* str)
         ret = 42;
     } else if (strcmp(str, "HALT") == 0) {
         ret = 43;
+    } else if (strcmp(str, "JNS") == 0) {
+        ret = 55;
     } else if (strcmp(str, "SUBCT") == 0) {
         ret = 76;
     } else {
@@ -219,10 +221,15 @@ int parsingLine(char* str, int* address, int* value)
             sreadInt(tmpPtr, &operand, 16);
             tmpPtr[2] = tmp;
             sc_commandEncode(command, operand, value);
+        } else if (*tmpPtr == '-') {
+            sreadInt(tmpPtr + 1, value, 16);
+            *value &= 0x7FFF;
+            *value |= (1 << 14);
+            *value |= (1 << 13);
         } else {
             sreadInt(tmpPtr, value, 16);
+            *value &= 0x1FFF;
             *value |= (1 << 14);
-            *value &= 0x7FFF;
         }
     } else {
         while (1) {
